@@ -1,7 +1,6 @@
 package app
 
 import kotlinx.coroutines.*
-import org.w3c.xhr.XMLHttpRequest
 import react.*
 import react.dom.div
 import react.dom.h1
@@ -15,14 +14,14 @@ interface AppState : RState {
 }
 
 suspend fun fetchVideo(id: Int): Video =
-        window.fetch("https://my-json-server.typicode.com/kotlin-hands-on/kotlinconf-json/videos/$id")
+        window.fetch("http://localhost:8080/video?id=$id")
                 .await()
                 .json()
                 .await()
                 .unsafeCast<Video>()
 
 suspend fun fetchVideos(): List<Video> = coroutineScope {
-    (1..10).map { id ->
+    (1..1).map { id ->
         async {
             fetchVideo(id)
         }

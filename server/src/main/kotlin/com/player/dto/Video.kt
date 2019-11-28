@@ -6,7 +6,7 @@ import org.jooq.Record
 
 data class Video(val id: Long, val title: String, val speaker: String, val videoUrl: String) {
     constructor(id: Long, title: String, videoUrl: String)
-            : this(id, title, "", videoUrl)
+            : this(id, title, "speaker", videoUrl)
 
     constructor(r: VideoRecord) : this(r.id.toLong(), r.title, r.videourl)
 
