@@ -18,19 +18,19 @@ class VideoController {
     @Autowired
     private val dsl: DSLContext? = null
 
-    @GetMapping("/link")
-    fun links(): MutableList<Video>? {
+    @GetMapping("/video")
+    fun videos(): MutableList<Video>? {
         return dsl?.selectFrom(VIDEO)?.stream()?.map { r -> Video(r) }?.collect(Collectors.toList())
     }
 
-    @GetMapping("/link", params = ["id"])
-    fun link(@RequestParam("id") id: Long): Video? {
+    @GetMapping("/video", params = ["id"])
+    fun video(@RequestParam("id") id: Long): Video? {
         return dsl?.selectFrom(VIDEO)?.where(VIDEO.ID.eq(id.toInt()))?.first()?.map { r -> Video(r) }
     }
 
     @Transactional
-    @PostMapping("/link", params = ["title", "url"])
-    fun createLink(model: ModelMap, @RequestParam("title") title: String, @RequestParam("url") url: String): Video? {
+    @PostMapping("/video", params = ["title", "url"])
+    fun createVideo(model: ModelMap, @RequestParam("title") title: String, @RequestParam("url") url: String): Video? {
         return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
                 ?.values(title, url)?.returning()
                 ?.fetchOptional()?.map { r -> Video(r) }?.orElse(null)
