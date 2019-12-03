@@ -3,13 +3,15 @@ import org.jooq.meta.jaxb.*
 import org.jooq.meta.jaxb.Configuration
 import org.jooq.meta.jaxb.Target
 
-val jooqDir = "${buildDir}/build/generated-sources/java"
+val jooqDir = "${buildDir}/generated-sources/java"
+
+val commonSourcesDir = "${projectDir}/frontend/build/classes/kotlin/main"
 
 plugins {
     id("org.springframework.boot") version "2.2.1.RELEASE"
     id("io.spring.dependency-management") version "1.0.8.RELEASE"
-    kotlin("jvm") version "1.3.50"
-    kotlin("plugin.spring") version "1.3.50"
+    id("org.jetbrains.kotlin.jvm") version "1.3.61"
+    id("org.jetbrains.kotlin.plugin.spring") version "1.3.61"
 }
 
 group = "com.player"
@@ -20,17 +22,15 @@ repositories {
     mavenCentral()
 }
 
-
-
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jooq", name = "jooq", version = "3.11.11")
-        "classpath"(group = "org.jooq", name = "jooq-meta", version = "3.11.11")
-        "classpath"(group = "org.jooq", name = "jooq-codegen", version = "3.11.11")
-        "classpath"(group = "org.postgresql", name = "postgresql", version = "42.2.5")
+        classpath(group = "org.jooq", name = "jooq", version = "3.11.11")
+        classpath(group = "org.jooq", name = "jooq-meta", version = "3.11.11")
+        classpath(group = "org.jooq", name = "jooq-codegen", version = "3.11.11")
+        classpath(group = "org.postgresql", name = "postgresql", version = "42.2.5")
     }
 }
 
@@ -56,7 +56,6 @@ tasks.register("buildMapping") {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -67,6 +66,13 @@ dependencies {
         main {
             java {
                 srcDirs(jooqDir)
+            }
+        }
+    }
+    sourceSets {
+        main {
+            java {
+                srcDirs(commonSourcesDir)
             }
         }
     }
