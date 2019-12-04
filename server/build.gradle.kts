@@ -5,7 +5,7 @@ import org.jooq.meta.jaxb.Target
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
-val commonSourcesDir = "${projectDir}/frontend/build/classes/kotlin/main"
+val commonSourcesDir = "${projectDir}/../client/src/app/common"
 
 plugins {
     id("org.springframework.boot") version "2.2.1.RELEASE"

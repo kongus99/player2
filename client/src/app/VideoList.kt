@@ -3,6 +3,7 @@ package app
 import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.p
+import common.Video
 
 interface VideoListProps : RProps {
     var videos: List<Video>
