@@ -14,20 +14,33 @@ interface AppState : RState {
     var watchedVideos: List<Video>
 }
 
-suspend fun fetchVideo(id: Int): Video =
-        window.fetch("http://localhost:8080/video?id=$id")
-                .await()
-                .json()
-                .await()
-                .unsafeCast<Video>()
+//suspend fun fetchVideo(id: Int): Video =
+//        window.fetch("http://localhost:8080/video?id=$id")
+//                .await()
+//                .json()
+//                .await()
+//                .unsafeCast<Video>()
 
-suspend fun fetchVideos(): List<Video> = coroutineScope {
-    (1..1).map { id ->
-        async {
-            fetchVideo(id)
+
+suspend fun fetchVideos(): List<Video> =
+        coroutineScope {
+            withContext(Dispatchers.Default) {
+                window.fetch("http://localhost:8080/video")
+                        .await()
+                        .json()
+                        .await()
+                        .unsafeCast<Array<Video>>()
+                        .toList()
+            }
         }
-    }.awaitAll()
-}
+
+//suspend fun fetchVideos(): List<Video> = coroutineScope {
+//    (1..2).map { id ->
+//        async {
+//            fetchVideo(id)
+//        }
+//    }.awaitAll()
+//}
 
 class App : RComponent<RProps, AppState>() {
     override fun AppState.init() {
@@ -47,6 +60,7 @@ class App : RComponent<RProps, AppState>() {
         h1 {
             +"Video exploder"
         }
+        videoAdder {}
         div {
             h3 {
                 +"Videos to watch"

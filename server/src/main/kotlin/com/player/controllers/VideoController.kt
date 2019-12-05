@@ -19,8 +19,8 @@ class VideoController {
 
     @CrossOrigin
     @GetMapping("/video")
-    fun videos(): MutableList<Video>? {
-        return dsl?.selectFrom(VIDEO)?.stream()?.map { r -> fromVideoRecord(r) }?.collect(Collectors.toList())
+    fun videos(): List<Video>? {
+        return dsl?.selectFrom(VIDEO)?.map { r -> fromVideoRecord(r) }
     }
 
     @CrossOrigin
