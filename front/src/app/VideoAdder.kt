@@ -1,24 +1,24 @@
 package app
 
-import common.Video
-import kotlinx.coroutines.await
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
-import org.w3c.fetch.RequestInit
 import react.*
 import react.dom.form
 import react.dom.input
-import kotlin.browser.window
 
-class VideoAdder(props: RProps) : RComponent<RProps, RState>(props) {
-    suspend fun postVideo(v: Video): Video =
-            window.fetch("http://localhost:8080/video?title=${v.title}&url=${v.videoUrl}",
-                    RequestInit("POST"))
-                    .await()
-                    .json()
-                    .await()
-                    .unsafeCast<Video>()
+interface VideoAdderState : RState {
+    var title: String?
+    var videoUrl: String?
+}
+
+class VideoAdder(props: RProps) : RComponent<RProps, VideoAdderState>(props) {
+    override fun VideoAdderState.init() {
+        title = ""
+        videoUrl = ""
+    }
+
 
     override fun RBuilder.render() {
         form {
@@ -26,7 +26,10 @@ class VideoAdder(props: RProps) : RComponent<RProps, RState>(props) {
                 name = "Add video"
                 action = "http://localhost:8080/video"
                 onSubmitFunction = {
-
+                    it.preventDefault()
+                    println(state.title)
+                    println(state.videoUrl)
+//                    VideoServices.post(state.video)
                 }
                 method = FormMethod.post
             }
@@ -35,6 +38,13 @@ class VideoAdder(props: RProps) : RComponent<RProps, RState>(props) {
                 attrs {
                     type = InputType.text
                     name = "title"
+                    value = state.title.orEmpty()
+                    onChangeFunction = {
+                        val newValue = js("it.target.value") as String;
+                        setState {
+                            title = newValue
+                        }
+                    }
                 }
             }
             +"Url"
@@ -42,6 +52,13 @@ class VideoAdder(props: RProps) : RComponent<RProps, RState>(props) {
                 attrs {
                     type = InputType.text
                     name = "url"
+                    value = state.videoUrl.orEmpty()
+                    onChangeFunction = {
+                        val newValue = js("it.target.value") as String;
+                        setState {
+                            videoUrl = newValue
+                        }
+                    }
                 }
             }
             input {

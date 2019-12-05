@@ -1,46 +1,18 @@
 package app
 
 import common.Video
-import kotlinx.coroutines.*
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import react.*
 import react.dom.div
 import react.dom.h1
 import react.dom.h3
-import kotlin.browser.window
 
 interface AppState : RState {
     var currentVideo: Video?
     var unwatchedVideos: List<Video>
     var watchedVideos: List<Video>
 }
-
-//suspend fun fetchVideo(id: Int): Video =
-//        window.fetch("http://localhost:8080/video?id=$id")
-//                .await()
-//                .json()
-//                .await()
-//                .unsafeCast<Video>()
-
-
-suspend fun fetchVideos(): List<Video> =
-        coroutineScope {
-            withContext(Dispatchers.Default) {
-                window.fetch("http://localhost:8080/video")
-                        .await()
-                        .json()
-                        .await()
-                        .unsafeCast<Array<Video>>()
-                        .toList()
-            }
-        }
-
-//suspend fun fetchVideos(): List<Video> = coroutineScope {
-//    (1..2).map { id ->
-//        async {
-//            fetchVideo(id)
-//        }
-//    }.awaitAll()
-//}
 
 class App : RComponent<RProps, AppState>() {
     override fun AppState.init() {
@@ -49,7 +21,7 @@ class App : RComponent<RProps, AppState>() {
 
         val mainScope = MainScope()
         mainScope.launch {
-            val videos = fetchVideos()
+            val videos = VideoServices.get()
             setState {
                 unwatchedVideos = videos
             }
