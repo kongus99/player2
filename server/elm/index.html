@@ -4,21 +4,38 @@
     <title>Browser</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://vjs.zencdn.net/7.5.5/video-js.css" rel="stylesheet"/>
 
     <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
 </head>
 
 <body>
 <div id="elm-app-is-loaded-here"></div>
 
+
+<video
+        id="mainPlayer"
+        class="video-js vjs-default-skin"
+        controls
+        width="640" height="264"
+        data-setup='{ "techOrder": ["youtube"] }'
+>
+    <source src="" type="video/youtube">
+</video>
+<script src="https://vjs.zencdn.net/7.5.5/video.js"></script>
+<script src="Youtube.min.js"></script>
 <script src="compiled.js"></script>
 <script>
     let app = Elm.Main.init({
         node: document.getElementById("elm-app-is-loaded-here")
     });
-</script>P
-
+    app.ports.sendUrl.subscribe(function(url) {
+        const player = videojs.players.mainPlayer;
+        player.src({src: url, type: 'video/youtube'});
+    });
+</script>
 </body>
 </html>

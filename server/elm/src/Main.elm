@@ -1,17 +1,17 @@
 module Main exposing (main)
 
 import Bootstrap.Grid as Grid
-import Bootstrap.Grid.Col as Col
 import Bootstrap.Grid.Row as Row
 import Browser
-import Signup exposing (User)
+import VideoList
 
 
 main =
-    Browser.sandbox
-        { init = Signup.initialModel
+    Browser.element
+        { init = VideoList.init
         , view = view
-        , update = Signup.update
+        , update = VideoList.update
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -19,7 +19,7 @@ view model =
     Grid.container []
         [ Grid.row [ Row.topXs ] []
         , Grid.row [ Row.centerMd ]
-            [ Grid.col [] [ Signup.view model ]
+            [ Grid.col [] [ VideoList.view model ]
             ]
         , Grid.row [ Row.bottomXs ] []
         ]

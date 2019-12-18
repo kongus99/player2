@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.ui.ModelMap
 import org.springframework.web.bind.annotation.*
-import java.util.stream.Collectors
 
 
 @RestController
@@ -17,12 +16,6 @@ class VideoController {
     @Autowired
     private val dsl: DSLContext? = null
 
-
-    @CrossOrigin
-    @GetMapping("/")
-    fun root(): List<String>? {
-        return listOf("a", "b", "c")
-    }
 
     @CrossOrigin
     @GetMapping("/video")
