@@ -17,6 +17,13 @@ class VideoController {
     @Autowired
     private val dsl: DSLContext? = null
 
+
+    @CrossOrigin
+    @GetMapping("/")
+    fun root(): List<String>? {
+        return listOf("a", "b", "c")
+    }
+
     @CrossOrigin
     @GetMapping("/video")
     fun videos(): List<Video>? {

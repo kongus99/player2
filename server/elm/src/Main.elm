@@ -1,24 +1,25 @@
 module Main exposing (main)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-
-
-view model =
-    div [ class "jumbotron" ]
-        [ h1 [] [ text "Welcome to Dunder Mifflin!" ]
-        , p []
-            [ text "Dunder Mifflin Inc. (stock symbol "
-            , strong [] [ text "DMI" ]
-            , text <|
-                """ 
-                ) is a micro-cap regional paper and office 
-                supply distributor with an emphasis on servicing 
-                small-business clients.
-                """
-            ]
-        ]
+import Bootstrap.Grid as Grid
+import Bootstrap.Grid.Col as Col
+import Bootstrap.Grid.Row as Row
+import Browser
+import Signup exposing (User)
 
 
 main =
-    view "dummy model"
+    Browser.sandbox
+        { init = Signup.initialModel
+        , view = view
+        , update = Signup.update
+        }
+
+
+view model =
+    Grid.container []
+        [ Grid.row [ Row.topXs ] []
+        , Grid.row [ Row.centerMd ]
+            [ Grid.col [] [ Signup.view model ]
+            ]
+        , Grid.row [ Row.bottomXs ] []
+        ]
