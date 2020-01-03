@@ -1,5 +1,7 @@
 port module VideoList exposing (..)
 
+import Bootstrap.Button as Button
+import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
 import Bootstrap.Grid.Row as Row
@@ -7,9 +9,12 @@ import Bootstrap.ListGroup as ListGroup
 import Html exposing (..)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, string)
+import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (required)
+import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
+import Video exposing (Video)
+import Video.Add as Add
 
 
 port sendUrl : String -> Cmd msg
@@ -19,23 +24,20 @@ videoUrl =
     "http://localhost:8080/video"
 
 
-type alias Video =
-    { id : Int
-    , title : String
-    , videoUrl : String
-    }
-
-
 type alias Model =
-    { videos : WebData (List Video)
+    { add : Add.Model
+    , videos : WebData (List Video)
     }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick Fetch ]
-            [ text "Get data from server" ]
+        [ ButtonGroup.buttonGroup []
+            [ ButtonGroup.button [ Button.primary, Button.onClick Fetch ] [ text "Refresh" ]
+            , ButtonGroup.button [ Button.primary, Button.onClick (Add Add.Open) ] [ text "Add" ]
+            ]
+        , Html.map (\m -> Add m) (Add.view model.add)
         , viewVideosOrError model
         ]
 
@@ -91,8 +93,10 @@ viewVideos videos =
 
 type Msg
     = Fetch
+    | Add Add.Msg
     | Play Video
-    | Received (WebData (List Video))
+    | Fetched (WebData (List Video))
+    | Created (WebData (Maybe Video))
 
 
 getVideos : Cmd Msg
@@ -101,10 +105,22 @@ getVideos =
         { url = videoUrl
         , expect =
             list videoDecoder
-                |> Http.expectJson (RemoteData.fromResult >> Received)
+                |> Http.expectJson (RemoteData.fromResult >> Fetched)
         }
 
 
+postVideo : Video -> Cmd Msg
+postVideo video =
+    Http.post
+        { url = videoUrl
+        , body =
+            Video.encode video
+                |> Http.jsonBody
+        , expect = nullable videoDecoder |> Http.expectJson (RemoteData.fromResult >> Created)
+        }
+
+
+videoDecoder : Decoder Video
 videoDecoder =
     Decode.succeed Video
         |> required "id" int
@@ -121,8 +137,18 @@ update msg model =
         Play video ->
             ( model, sendUrl video.videoUrl )
 
-        Received response ->
+        Add m ->
+            let
+                ( addModel, newVideo ) =
+                    Add.update m model.add
+            in
+            ( { model | add = addModel }, newVideo |> Maybe.map postVideo |> Maybe.withDefault Cmd.none )
+
+        Fetched response ->
             ( { model | videos = response }, Cmd.none )
+
+        Created _ ->
+            ( model, getVideos )
 
 
 buildErrorMessage : Http.Error -> String
@@ -147,6 +173,7 @@ buildErrorMessage httpError =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { videos = RemoteData.NotAsked
+      , add = Add.init
       }
     , getVideos
     )

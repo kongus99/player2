@@ -31,10 +31,10 @@ class VideoController {
 
     @CrossOrigin
     @Transactional
-    @PostMapping("/video", params = ["title", "url"])
-    fun createVideo(model: ModelMap, @RequestParam("title") title: String, @RequestParam("url") url: String): Video? {
+    @PostMapping("/video")
+    fun createVideo(model: ModelMap, @RequestBody video: Video): Video? {
         return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
-                ?.values(title, url)?.returning()
+                ?.values(video.title, video.videoUrl)?.returning()
                 ?.fetchOptional()?.map { r -> fromVideoRecord(r) }?.orElse(null)
     }
 
