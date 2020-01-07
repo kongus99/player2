@@ -1,7 +1,7 @@
 port module VideoList exposing (..)
 
 import Bootstrap.Button as Button
-import Bootstrap.ButtonGroup as ButtonGroup
+import Bootstrap.ButtonGroup as ButtonGroup exposing (ButtonItem)
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
 import Bootstrap.Grid.Row as Row
@@ -9,9 +9,7 @@ import Bootstrap.ListGroup as ListGroup
 import Html exposing (..)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
-import Json.Decode.Pipeline exposing (required)
-import Json.Encode as Encode
+import Json.Decode exposing (Decoder, list, nullable)
 import RemoteData exposing (RemoteData(..), WebData)
 import Video exposing (Video)
 import Video.Add as Add
@@ -35,9 +33,9 @@ view model =
     div []
         [ ButtonGroup.buttonGroup []
             [ ButtonGroup.button [ Button.primary, Button.onClick Fetch ] [ text "Refresh" ]
-            , ButtonGroup.button [ Button.primary, Button.onClick (Add Add.Open) ] [ text "Add" ]
+            , Add.button Add
             ]
-        , Html.map (\m -> Add m) (Add.view model.add)
+        , Add.modal Add model.add
         , viewVideosOrError model
         ]
 
@@ -104,7 +102,7 @@ getVideos =
     Http.get
         { url = videoUrl
         , expect =
-            list videoDecoder
+            list Video.decode
                 |> Http.expectJson (RemoteData.fromResult >> Fetched)
         }
 
@@ -116,16 +114,8 @@ postVideo video =
         , body =
             Video.encode video
                 |> Http.jsonBody
-        , expect = nullable videoDecoder |> Http.expectJson (RemoteData.fromResult >> Created)
+        , expect = nullable Video.decode |> Http.expectJson (RemoteData.fromResult >> Created)
         }
-
-
-videoDecoder : Decoder Video
-videoDecoder =
-    Decode.succeed Video
-        |> required "id" int
-        |> required "title" string
-        |> required "videoUrl" string
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

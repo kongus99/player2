@@ -1,10 +1,11 @@
 module Video.Add exposing (..)
 
 import Bootstrap.Button as Button
+import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form.Input as Input
 import Bootstrap.Form.InputGroup as InputGroup
 import Bootstrap.Modal as Modal
-import Html exposing (Html, br, text)
+import Html exposing (Html, br, div, text)
 import Video exposing (Video)
 
 
@@ -43,25 +44,33 @@ update msg model =
             ( { model | url = url }, Nothing )
 
 
-view : Model -> Html Msg
-view model =
-    Modal.config Close
-        |> Modal.large
-        |> Modal.hideOnBackdropClick True
-        |> Modal.body []
-            [ InputGroup.config
-                (InputGroup.text [ Input.placeholder "Name", Input.value model.name, Input.onInput UpdateName ])
-                |> InputGroup.view
-            , br [] []
-            , InputGroup.config
-                (InputGroup.text [ Input.placeholder "Url", Input.value model.url, Input.onInput UpdateUrl ])
-                |> InputGroup.view
-            ]
-        |> Modal.footer []
-            [ Button.submitButton
-                [ Button.primary
-                , Button.onClick Submit
+button : (Msg -> msg) -> ButtonGroup.ButtonItem msg
+button mapper =
+    ButtonGroup.button [ Button.primary, Button.onClick (mapper Open) ] [ text "Add" ]
+
+
+modal : (Msg -> msg) -> Model -> Html msg
+modal mapper model =
+    div []
+        [ Modal.config Close
+            |> Modal.large
+            |> Modal.hideOnBackdropClick True
+            |> Modal.body []
+                [ InputGroup.config
+                    (InputGroup.text [ Input.placeholder "Name", Input.value model.name, Input.onInput UpdateName ])
+                    |> InputGroup.view
+                , br [] []
+                , InputGroup.config
+                    (InputGroup.text [ Input.placeholder "Url", Input.value model.url, Input.onInput UpdateUrl ])
+                    |> InputGroup.view
                 ]
-                [ text "Add" ]
-            ]
-        |> Modal.view model.visible
+            |> Modal.footer []
+                [ Button.submitButton
+                    [ Button.primary
+                    , Button.onClick Submit
+                    ]
+                    [ text "Add" ]
+                ]
+            |> Modal.view model.visible
+            |> Html.map mapper
+        ]
