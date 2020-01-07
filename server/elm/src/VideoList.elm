@@ -10,17 +10,12 @@ import Html exposing (..)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, nullable)
 import RemoteData exposing (RemoteData(..), WebData)
 import Video exposing (Video)
 import Video.Add as Add
 
 
 port sendUrl : String -> Cmd msg
-
-
-videoUrl =
-    "http://localhost:8080/video"
 
 
 type alias Model =
@@ -113,44 +108,11 @@ type Msg
     | NeedsUpdate (WebData (Maybe Int))
 
 
-getVideos : Cmd Msg
-getVideos =
-    Http.get
-        { url = videoUrl
-        , expect =
-            list Video.decode
-                |> Http.expectJson (RemoteData.fromResult >> Fetched)
-        }
-
-
-postVideo : Video -> Cmd Msg
-postVideo video =
-    Http.post
-        { url = videoUrl
-        , body =
-            Video.encode video
-                |> Http.jsonBody
-        , expect = Http.expectJson (RemoteData.fromResult >> NeedsUpdate) (nullable int)
-        }
-
-
-deleteVideo video =
-    Http.request
-        { method = "DELETE"
-        , headers = []
-        , url = videoUrl ++ "/" ++ String.fromInt video.id
-        , body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> NeedsUpdate) (nullable int)
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Fetch ->
-            ( { model | videos = RemoteData.Loading }, getVideos )
+            ( { model | videos = RemoteData.Loading }, Video.get Fetched )
 
         Select video ->
             ( { model | selected = Just video }, sendUrl video.videoUrl )
@@ -160,16 +122,16 @@ update msg model =
                 ( addModel, newVideo ) =
                     Add.update m model.add
             in
-            ( { model | add = addModel }, newVideo |> Maybe.map postVideo |> Maybe.withDefault Cmd.none )
+            ( { model | add = addModel }, newVideo |> Maybe.map (Video.post NeedsUpdate) |> Maybe.withDefault Cmd.none )
 
         Delete video ->
-            ( model, deleteVideo video )
+            ( model, Video.delete NeedsUpdate video )
 
         Fetched response ->
             ( { model | videos = response }, Cmd.none )
 
         NeedsUpdate _ ->
-            ( model, getVideos )
+            ( model, Video.get Fetched )
 
 
 buildErrorMessage : Http.Error -> String
@@ -197,5 +159,5 @@ init _ =
       , add = Add.init
       , selected = Nothing
       }
-    , getVideos
+    , Video.get Fetched
     )
