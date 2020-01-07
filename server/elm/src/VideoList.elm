@@ -2,14 +2,15 @@ port module VideoList exposing (..)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup exposing (ButtonItem)
-import Bootstrap.Grid as Grid
-import Bootstrap.Grid.Col as Col
-import Bootstrap.Grid.Row as Row
 import Bootstrap.ListGroup as ListGroup
+import Bootstrap.Utilities.Flex as Flex
+import Bootstrap.Utilities.Size as Size
+import Bootstrap.Utilities.Spacing as Spacing
 import Html exposing (..)
+import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode exposing (Decoder, list, nullable)
+import Json.Decode as Decode exposing (Decoder, int, list, nullable)
 import RemoteData exposing (RemoteData(..), WebData)
 import Video exposing (Video)
 import Video.Add as Add
@@ -25,6 +26,7 @@ videoUrl =
 type alias Model =
     { add : Add.Model
     , videos : WebData (List Video)
+    , selected : Maybe Video
     }
 
 
@@ -50,7 +52,7 @@ viewVideosOrError model =
             h3 [] [ text "Loading..." ]
 
         RemoteData.Success videos ->
-            viewVideos videos
+            viewVideos model.selected videos
 
         RemoteData.Failure httpError ->
             viewError (buildErrorMessage httpError)
@@ -68,33 +70,47 @@ viewError errorMessage =
         ]
 
 
-viewVideos : List Video -> Html Msg
-viewVideos videos =
+singleVideo : Maybe Video -> Video -> ListGroup.CustomItem Msg
+singleVideo selected video =
     let
-        singleVideo video =
-            ListGroup.button [ ListGroup.attrs [ onClick (Play video) ] ]
-                [ Grid.container []
-                    [ Grid.row [ Row.centerMd ]
-                        [ Grid.col [ Col.mdAuto ] [ text video.title ]
-                        , Grid.colBreak []
-                        , Grid.col [ Col.mdAuto ] [ Html.a [] [ text video.videoUrl ] ]
-                        , Grid.colBreak []
-                        ]
-                    ]
-                ]
+        defaultAttributes =
+            [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select video) ] ]
+
+        isActive =
+            selected |> Maybe.map (\s -> s.id == video.id) |> Maybe.withDefault False
+
+        attributes =
+            if isActive then
+                ListGroup.active :: defaultAttributes
+
+            else
+                defaultAttributes
     in
+    ListGroup.anchor
+        attributes
+        [ div [ Flex.block, Flex.justifyBetween, Size.w100 ]
+            [ h5 [ Spacing.mb1 ] [ text video.title ]
+            , Button.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "x" ]
+            ]
+        , p [ Spacing.mb1 ] [ text video.videoUrl ]
+        ]
+
+
+viewVideos : Maybe Video -> List Video -> Html Msg
+viewVideos selected videos =
     div []
         [ h3 [] [ text "Video list" ]
-        , ListGroup.custom (List.map singleVideo videos)
+        , ListGroup.custom (List.map (singleVideo selected) videos)
         ]
 
 
 type Msg
     = Fetch
     | Add Add.Msg
-    | Play Video
+    | Select Video
+    | Delete Video
     | Fetched (WebData (List Video))
-    | Created (WebData (Maybe Video))
+    | NeedsUpdate (WebData (Maybe Int))
 
 
 getVideos : Cmd Msg
@@ -114,7 +130,19 @@ postVideo video =
         , body =
             Video.encode video
                 |> Http.jsonBody
-        , expect = nullable Video.decode |> Http.expectJson (RemoteData.fromResult >> Created)
+        , expect = Http.expectJson (RemoteData.fromResult >> NeedsUpdate) (nullable int)
+        }
+
+
+deleteVideo video =
+    Http.request
+        { method = "DELETE"
+        , headers = []
+        , url = videoUrl ++ "/" ++ String.fromInt video.id
+        , body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> NeedsUpdate) (nullable int)
+        , timeout = Nothing
+        , tracker = Nothing
         }
 
 
@@ -124,8 +152,8 @@ update msg model =
         Fetch ->
             ( { model | videos = RemoteData.Loading }, getVideos )
 
-        Play video ->
-            ( model, sendUrl video.videoUrl )
+        Select video ->
+            ( { model | selected = Just video }, sendUrl video.videoUrl )
 
         Add m ->
             let
@@ -134,10 +162,13 @@ update msg model =
             in
             ( { model | add = addModel }, newVideo |> Maybe.map postVideo |> Maybe.withDefault Cmd.none )
 
+        Delete video ->
+            ( model, deleteVideo video )
+
         Fetched response ->
             ( { model | videos = response }, Cmd.none )
 
-        Created _ ->
+        NeedsUpdate _ ->
             ( model, getVideos )
 
 
@@ -164,6 +195,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { videos = RemoteData.NotAsked
       , add = Add.init
+      , selected = Nothing
       }
     , getVideos
     )

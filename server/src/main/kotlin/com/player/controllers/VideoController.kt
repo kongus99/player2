@@ -24,18 +24,25 @@ class VideoController {
     }
 
     @CrossOrigin
-    @GetMapping("/video", params = ["id"])
-    fun video(@RequestParam("id") id: Long): Video? {
+    @GetMapping("/video/{id}")
+    fun video(@PathVariable("id") id: Long): Video? {
         return dsl?.selectFrom(VIDEO)?.where(VIDEO.ID.eq(id.toInt()))?.first()?.map { r -> fromRecord(r) }
     }
 
     @CrossOrigin
     @Transactional
     @PostMapping("/video")
-    fun createVideo(model: ModelMap, @RequestBody video: Video): Video? {
+    fun createVideo(model: ModelMap, @RequestBody video: Video): Int? {
         return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
                 ?.values(video.title, video.videoUrl)?.returning()
-                ?.fetchOptional()?.map { r -> fromVideoRecord(r) }?.orElse(null)
+                ?.fetchOptional()?.map { r -> r.id }?.orElse(null)
+    }
+
+    @CrossOrigin
+    @Transactional
+    @DeleteMapping("/video/{id}")
+    fun deleteVideo(@PathVariable("id") id: Int): Int? {
+        return dsl?.deleteFrom(VIDEO)?.where(VIDEO.ID.eq(id))?.returningResult(VIDEO.ID)?.fetchOne()?.component1()
     }
 
 }
