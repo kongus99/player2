@@ -7,7 +7,6 @@ import common.Video
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.ui.ModelMap
 import org.springframework.web.bind.annotation.*
 
 
@@ -20,7 +19,7 @@ class VideoController {
     @CrossOrigin
     @GetMapping("/video")
     fun videos(): List<Video>? {
-        return dsl?.selectFrom(VIDEO)?.map { r -> fromVideoRecord(r) }
+        return dsl?.selectFrom(VIDEO)?.orderBy(VIDEO.ID.asc())?.map { r -> fromVideoRecord(r) }
     }
 
     @CrossOrigin
@@ -32,9 +31,20 @@ class VideoController {
     @CrossOrigin
     @Transactional
     @PostMapping("/video")
-    fun createVideo(model: ModelMap, @RequestBody video: Video): Int? {
+    fun createVideo(@RequestBody video: Video): Int? {
         return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
                 ?.values(video.title, video.videoUrl)?.returning()
+                ?.fetchOptional()?.map { r -> r.id }?.orElse(null)
+    }
+
+    @CrossOrigin
+    @Transactional
+    @PutMapping("/video")
+    fun editVideo(@RequestBody video: Video): Int? {
+        return dsl?.update(VIDEO)
+                ?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEOURL, video.videoUrl)
+                ?.where(VIDEO.ID.eq(video.id))
+                ?.returning()
                 ?.fetchOptional()?.map { r -> r.id }?.orElse(null)
     }
 

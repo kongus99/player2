@@ -1,4 +1,4 @@
-module Video exposing (Video, delete, get, post)
+module Video exposing (Video, delete, get, post, put)
 
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, nullable)
@@ -44,6 +44,21 @@ delete msg video =
         , headers = []
         , url = url ++ "/" ++ String.fromInt video.id
         , body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> msg) (nullable int)
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+put : (WebData (Maybe Int) -> c) -> Video -> Cmd c
+put msg video =
+    Http.request
+        { method = "PUT"
+        , headers = []
+        , url = url
+        , body =
+            encode video
+                |> Http.jsonBody
         , expect = Http.expectJson (RemoteData.fromResult >> msg) (nullable int)
         , timeout = Nothing
         , tracker = Nothing

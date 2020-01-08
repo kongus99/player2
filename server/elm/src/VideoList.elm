@@ -12,14 +12,15 @@ import Html.Events exposing (onClick)
 import Http
 import RemoteData exposing (RemoteData(..), WebData)
 import Video exposing (Video)
-import Video.Add as Add
+import Video.Edit as Edit exposing (Msg(..))
 
 
 port sendUrl : String -> Cmd msg
 
 
 type alias Model =
-    { add : Add.Model
+    { add : Edit.Model
+    , edit : Edit.Model
     , videos : WebData (List Video)
     , selected : Maybe Video
     }
@@ -30,9 +31,10 @@ view model =
     div []
         [ ButtonGroup.buttonGroup []
             [ ButtonGroup.button [ Button.primary, Button.onClick Fetch ] [ text "Refresh" ]
-            , Add.button Add
+            , Edit.addButton Add
             ]
-        , Add.modal Add model.add
+        , Edit.modal Add model.add
+        , Edit.modal Edit model.edit
         , viewVideosOrError model
         ]
 
@@ -85,7 +87,13 @@ singleVideo selected video =
         attributes
         [ div [ Flex.block, Flex.justifyBetween, Size.w100 ]
             [ h5 [ Spacing.mb1 ] [ text video.title ]
-            , Button.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "x" ]
+            , ButtonGroup.buttonGroup []
+                [ Edit.editButton video Edit
+                , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
+                ]
+
+            --
+            --,
             ]
         , p [ Spacing.mb1 ] [ text video.videoUrl ]
         ]
@@ -101,8 +109,9 @@ viewVideos selected videos =
 
 type Msg
     = Fetch
-    | Add Add.Msg
+    | Add Edit.Msg
     | Select Video
+    | Edit Edit.Msg
     | Delete Video
     | Fetched (WebData (List Video))
     | NeedsUpdate (WebData (Maybe Int))
@@ -110,6 +119,10 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        sendEdit video method =
+            video |> Maybe.map (method NeedsUpdate) |> Maybe.withDefault Cmd.none
+    in
     case msg of
         Fetch ->
             ( { model | videos = RemoteData.Loading }, Video.get Fetched )
@@ -119,10 +132,17 @@ update msg model =
 
         Add m ->
             let
-                ( addModel, newVideo ) =
-                    Add.update m model.add
+                ( newModel, video ) =
+                    Edit.update m model.add
             in
-            ( { model | add = addModel }, newVideo |> Maybe.map (Video.post NeedsUpdate) |> Maybe.withDefault Cmd.none )
+            ( { model | add = newModel }, sendEdit video Video.post )
+
+        Edit m ->
+            let
+                ( newModel, video ) =
+                    Edit.update m model.edit
+            in
+            ( { model | edit = newModel }, sendEdit video Video.put )
 
         Delete video ->
             ( model, Video.delete NeedsUpdate video )
@@ -156,7 +176,8 @@ buildErrorMessage httpError =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { videos = RemoteData.NotAsked
-      , add = Add.init
+      , add = Edit.init
+      , edit = Edit.init
       , selected = Nothing
       }
     , Video.get Fetched

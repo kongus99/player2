@@ -1,4 +1,4 @@
-module Video.Add exposing (..)
+module Video.Edit exposing (..)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
@@ -10,16 +10,21 @@ import Video exposing (Video)
 
 
 type alias Model =
-    { visible : Modal.Visibility, name : String, url : String }
+    { visible : Modal.Visibility, id : Maybe Int, name : String, url : String }
 
 
 init =
-    { visible = Modal.hidden, name = "", url = "" }
+    { visible = Modal.hidden, id = Nothing, name = "", url = "" }
+
+
+setVideo : Model -> Video -> Model
+setVideo model video =
+    { model | id = Just video.id, name = video.title, url = video.videoUrl }
 
 
 type Msg
     = Close
-    | Open
+    | Open (Maybe Video)
     | Submit
     | UpdateName String
     | UpdateUrl String
@@ -31,11 +36,19 @@ update msg model =
         Close ->
             ( { model | visible = Modal.hidden }, Nothing )
 
-        Open ->
-            ( { model | visible = Modal.shown }, Nothing )
+        Open video ->
+            let
+                openModal =
+                    { model | visible = Modal.shown }
+            in
+            ( video |> Maybe.map (setVideo openModal) |> Maybe.withDefault openModal, Nothing )
 
         Submit ->
-            ( { model | visible = Modal.hidden }, Just (Video -1 model.name model.url) )
+            let
+                video =
+                    Video (Maybe.withDefault -1 model.id) model.name model.url
+            in
+            ( { model | visible = Modal.hidden }, Just video )
 
         UpdateName name ->
             ( { model | name = name }, Nothing )
@@ -44,9 +57,14 @@ update msg model =
             ( { model | url = url }, Nothing )
 
 
-button : (Msg -> msg) -> ButtonGroup.ButtonItem msg
-button mapper =
-    ButtonGroup.button [ Button.primary, Button.onClick (mapper Open) ] [ text "Add" ]
+addButton : (Msg -> msg) -> ButtonGroup.ButtonItem msg
+addButton mapper =
+    ButtonGroup.button [ Button.primary, Button.onClick (mapper (Open Nothing)) ] [ text "Add" ]
+
+
+editButton : Video -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
+editButton video mapper =
+    ButtonGroup.button [ Button.info, Button.small, Button.onClick (mapper (Open (Just video))) ] [ text "Edit" ]
 
 
 modal : (Msg -> msg) -> Model -> Html msg
@@ -69,7 +87,7 @@ modal mapper model =
                     [ Button.primary
                     , Button.onClick Submit
                     ]
-                    [ text "Add" ]
+                    [ text "Save" ]
                 ]
             |> Modal.view model.visible
             |> Html.map mapper
