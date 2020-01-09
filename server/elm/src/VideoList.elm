@@ -20,7 +20,7 @@ import Video.Options as Options exposing (Options)
 port sendUrlWithOptions : Encode.Value -> Cmd msg
 
 
-port sendOptions : Options -> Cmd msg
+port sendOptions : Encode.Value -> Cmd msg
 
 
 port videoEnded : (String -> msg) -> Sub msg
@@ -48,6 +48,7 @@ view model =
             , ButtonGroup.checkboxButtonGroupItem [ ButtonGroup.attrs [ Spacing.ml1 ] ]
                 [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ]
                 , ButtonGroup.checkboxButton model.options.loop [ Button.info, Button.onClick Loop ] [ text "Loop" ]
+                , ButtonGroup.checkboxButton model.options.playlist [ Button.info, Button.onClick Playlist ] [ text "Playlist" ]
                 ]
             ]
         , Edit.modal Add model.add
@@ -72,6 +73,15 @@ viewVideosOrError model =
             viewError (buildErrorMessage httpError)
 
 
+getVideos model =
+    case model.videos of
+        RemoteData.Success videos ->
+            videos
+
+        _ ->
+            []
+
+
 viewError : String -> Html Msg
 viewError errorMessage =
     let
@@ -88,7 +98,7 @@ singleVideo : Maybe Video -> Video -> ListGroup.CustomItem Msg
 singleVideo selected video =
     let
         defaultAttributes =
-            [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select video) ] ]
+            [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select (Just video)) ] ]
 
         isActive =
             selected |> Maybe.map (\s -> s.id == video.id) |> Maybe.withDefault False
@@ -125,13 +135,32 @@ type Msg
     = Fetch
     | Autoplay
     | Loop
+    | Playlist
     | VideoEnded String
     | Add Edit.Msg
-    | Select Video
+    | Select (Maybe Video)
     | Edit Edit.Msg
     | Delete Video
     | Fetched (WebData (List Video))
     | NeedsUpdate (WebData (Maybe Int))
+
+
+split : a -> List a -> List a
+split e lst =
+    let
+        tail =
+            List.tail lst |> Maybe.withDefault []
+    in
+    List.head lst
+        |> Maybe.map
+            (\x ->
+                if x == e then
+                    tail
+
+                else
+                    split e tail
+            )
+        |> Maybe.withDefault []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -139,13 +168,33 @@ update msg model =
     let
         sendEdit video method =
             video |> Maybe.map (method NeedsUpdate) |> Maybe.withDefault Cmd.none
+
+        nextVideo : Model -> Maybe Video
+        nextVideo m =
+            let
+                videos =
+                    getVideos m
+
+                next =
+                    case m.selected |> Maybe.andThen (\s -> split s videos |> List.head) of
+                        Nothing ->
+                            List.head videos
+
+                        x ->
+                            x
+            in
+            next
     in
     case msg of
         Fetch ->
             ( { model | videos = RemoteData.Loading }, Video.get Fetched )
 
         Select video ->
-            ( { model | selected = Just video }, Options.encodeWithUrl video.videoUrl model.options |> sendUrlWithOptions )
+            ( { model | selected = video }
+            , video
+                |> Maybe.map (\v -> Options.encodeWithUrl v.videoUrl model.options |> sendUrlWithOptions)
+                |> Maybe.withDefault Cmd.none
+            )
 
         Add m ->
             let
@@ -178,14 +227,17 @@ update msg model =
                 newOptions =
                     Options.toggleLoop model.options
             in
-            ( { model | options = newOptions }, sendOptions newOptions )
+            ( { model | options = newOptions }, Options.encode newOptions |> sendOptions )
 
-        VideoEnded string ->
-            let
-                x =
-                    Debug.log "e" string
-            in
-            ( model, Cmd.none )
+        VideoEnded _ ->
+            if model.options.playlist then
+                update (Select <| nextVideo model) model
+
+            else
+                ( model, Cmd.none )
+
+        Playlist ->
+            ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
 
 
 buildErrorMessage : Http.Error -> String

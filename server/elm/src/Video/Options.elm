@@ -6,11 +6,12 @@ import Json.Encode as Encode
 type alias Options =
     { play : Bool
     , loop : Bool
+    , playlist : Bool
     }
 
 
 init =
-    { play = False, loop = True }
+    { play = False, loop = True, playlist = False }
 
 
 togglePlay : Options -> Options
@@ -23,10 +24,15 @@ toggleLoop options =
     { options | loop = not options.loop }
 
 
+togglePlaylist : Options -> Options
+togglePlaylist options =
+    { options | playlist = not options.playlist }
+
+
 encode options =
     Encode.object
         [ ( "play", Encode.bool options.play )
-        , ( "loop", Encode.bool options.loop )
+        , ( "loop", Encode.bool (not options.playlist && options.loop) )
         ]
 
 

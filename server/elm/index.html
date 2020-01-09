@@ -47,7 +47,7 @@
         player.loop(urlWithOptions.options.loop);
         if (urlWithOptions.options.play)
             player.play();
-        player.on("ended", (_) => app.ports.videoEnded.send("ended"));
+        player.one("ended", (_) => app.ports.videoEnded.send("ended"));
     });
 
     app.ports.sendOptions.subscribe(function (options) {
