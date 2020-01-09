@@ -11,7 +11,7 @@ main =
         { init = VideoList.init
         , view = view
         , update = VideoList.update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = VideoList.subscriptions
         }
 
 

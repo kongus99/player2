@@ -20,6 +20,17 @@ import Video.Options as Options exposing (Options)
 port sendUrlWithOptions : Encode.Value -> Cmd msg
 
 
+port sendOptions : Options -> Cmd msg
+
+
+port videoEnded : (String -> msg) -> Sub msg
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    videoEnded VideoEnded
+
+
 type alias Model =
     { add : Edit.Model
     , edit : Edit.Model
@@ -35,7 +46,9 @@ view model =
         [ ButtonGroup.toolbar []
             [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
             , ButtonGroup.checkboxButtonGroupItem [ ButtonGroup.attrs [ Spacing.ml1 ] ]
-                [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ] ]
+                [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ]
+                , ButtonGroup.checkboxButton model.options.loop [ Button.info, Button.onClick Loop ] [ text "Loop" ]
+                ]
             ]
         , Edit.modal Add model.add
         , Edit.modal Edit model.edit
@@ -111,6 +124,8 @@ viewVideos selected videos =
 type Msg
     = Fetch
     | Autoplay
+    | Loop
+    | VideoEnded String
     | Add Edit.Msg
     | Select Video
     | Edit Edit.Msg
@@ -157,6 +172,20 @@ update msg model =
 
         Autoplay ->
             ( { model | options = Options.togglePlay model.options }, Cmd.none )
+
+        Loop ->
+            let
+                newOptions =
+                    Options.toggleLoop model.options
+            in
+            ( { model | options = newOptions }, sendOptions newOptions )
+
+        VideoEnded string ->
+            let
+                x =
+                    Debug.log "e" string
+            in
+            ( model, Cmd.none )
 
 
 buildErrorMessage : Http.Error -> String

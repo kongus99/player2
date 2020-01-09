@@ -23,7 +23,6 @@
                     id="mainPlayer"
                     class="video-js vjs-default-skin"
                     controls
-                    loop
                     width="640" height="480"
                     data-setup='{ "techOrder": ["youtube"] }'
             >
@@ -45,8 +44,15 @@
     app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
         const player = videojs.players.mainPlayer;
         player.src({src: urlWithOptions.url, type: 'video/youtube'});
-        if (urlWithOptions.options.play) player.play();
-        player.on("ended", (e) => console.log(e));
+        player.loop(urlWithOptions.options.loop);
+        if (urlWithOptions.options.play)
+            player.play();
+        player.on("ended", (_) => app.ports.videoEnded.send("ended"));
+    });
+
+    app.ports.sendOptions.subscribe(function (options) {
+        const player = videojs.players.mainPlayer;
+        player.loop(options.loop);
     });
 
 </script>
