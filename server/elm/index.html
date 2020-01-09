@@ -4,7 +4,7 @@
     <title>Browser</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://vjs.zencdn.net/7.5.5/video-js.css" rel="stylesheet"/>
+    <link href="https://vjs.zencdn.net/7.7.4/video-js.css" rel="stylesheet"/>
 
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet"
@@ -13,30 +13,42 @@
 </head>
 
 <body>
-<div id="elm-app-is-loaded-here"></div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div id="elm-app-is-loaded-here"></div>
+        </div>
+        <div class="col-lg-4">
+            <video
+                    id="mainPlayer"
+                    class="video-js vjs-default-skin"
+                    controls
+                    loop
+                    width="640" height="480"
+                    data-setup='{ "techOrder": ["youtube"] }'
+            >
+                <source src=""/>
+            </video>
+        </div>
 
-
-<video
-        id="mainPlayer"
-        class="video-js vjs-default-skin"
-        style="margin: auto"
-        controls
-        width="640" height="264"
-        data-setup='{ "techOrder": ["youtube"] }'
->
-    <source src="" type="video/youtube">
-</video>
-<script src="https://vjs.zencdn.net/7.5.5/video.js"></script>
+    </div>
+</div>
+<script src="https://vjs.zencdn.net/7.7.4/video.js"></script>
 <script src="Youtube.min.js"></script>
 <script src="compiled.js"></script>
 <script>
     let app = Elm.Main.init({
         node: document.getElementById("elm-app-is-loaded-here")
     });
-    app.ports.sendUrl.subscribe(function(url) {
+
+
+    app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
         const player = videojs.players.mainPlayer;
-        player.src({src: url, type: 'video/youtube'});
+        player.src({src: urlWithOptions.url, type: 'video/youtube'});
+        if (urlWithOptions.options.play) player.play();
+        player.on("ended", (e) => console.log(e));
     });
+
 </script>
 </body>
 </html>

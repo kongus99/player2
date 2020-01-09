@@ -10,12 +10,14 @@ import Html exposing (..)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Http
+import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
 import Video exposing (Video)
 import Video.Edit as Edit exposing (Msg(..))
+import Video.Options as Options exposing (Options)
 
 
-port sendUrl : String -> Cmd msg
+port sendUrlWithOptions : Encode.Value -> Cmd msg
 
 
 type alias Model =
@@ -23,15 +25,17 @@ type alias Model =
     , edit : Edit.Model
     , videos : WebData (List Video)
     , selected : Maybe Video
+    , options : Options
     }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ ButtonGroup.buttonGroup []
-            [ ButtonGroup.button [ Button.primary, Button.onClick Fetch ] [ text "Refresh" ]
-            , Edit.addButton Add
+        [ ButtonGroup.toolbar []
+            [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
+            , ButtonGroup.checkboxButtonGroupItem [ ButtonGroup.attrs [ Spacing.ml1 ] ]
+                [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ] ]
             ]
         , Edit.modal Add model.add
         , Edit.modal Edit model.edit
@@ -91,9 +95,6 @@ singleVideo selected video =
                 [ Edit.editButton video Edit
                 , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
                 ]
-
-            --
-            --,
             ]
         , p [ Spacing.mb1 ] [ text video.videoUrl ]
         ]
@@ -109,6 +110,7 @@ viewVideos selected videos =
 
 type Msg
     = Fetch
+    | Autoplay
     | Add Edit.Msg
     | Select Video
     | Edit Edit.Msg
@@ -128,7 +130,7 @@ update msg model =
             ( { model | videos = RemoteData.Loading }, Video.get Fetched )
 
         Select video ->
-            ( { model | selected = Just video }, sendUrl video.videoUrl )
+            ( { model | selected = Just video }, Options.encodeWithUrl video.videoUrl model.options |> sendUrlWithOptions )
 
         Add m ->
             let
@@ -152,6 +154,9 @@ update msg model =
 
         NeedsUpdate _ ->
             ( model, Video.get Fetched )
+
+        Autoplay ->
+            ( { model | options = Options.togglePlay model.options }, Cmd.none )
 
 
 buildErrorMessage : Http.Error -> String
@@ -179,6 +184,7 @@ init _ =
       , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
+      , options = Options.init
       }
     , Video.get Fetched
     )

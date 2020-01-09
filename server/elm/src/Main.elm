@@ -16,10 +16,8 @@ main =
 
 
 view model =
-    Grid.container []
-        [ Grid.row [ Row.topXs ] []
-        , Grid.row [ Row.centerMd ]
+    Grid.containerFluid []
+        [ Grid.row [ Row.centerLg ]
             [ Grid.col [] [ VideoList.view model ]
             ]
-        , Grid.row [ Row.bottomXs ] []
         ]
