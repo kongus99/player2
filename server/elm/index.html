@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Browser</title>
+    <title>Video player</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="https://vjs.zencdn.net/7.7.4/video-js.css" rel="stylesheet"/>
@@ -16,7 +16,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-lg-8">
-            <div id="elm-app-is-loaded-here"></div>
+            <div id="elm-app"></div>
         </div>
         <div class="col-lg-4">
             <video
@@ -37,22 +37,24 @@
 <script src="compiled.js"></script>
 <script>
     let app = Elm.Main.init({
-        node: document.getElementById("elm-app-is-loaded-here")
+        node: document.getElementById("elm-app")
     });
-
+    const applyOptions = (player, options) => {
+        player.loop(options.loop);
+        player.off("ended");
+        player.one("ended", (_) => app.ports.videoEnded.send("ended"));
+    };
 
     app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
         const player = videojs.players.mainPlayer;
         player.src({src: urlWithOptions.url, type: 'video/youtube'});
-        player.loop(urlWithOptions.options.loop);
+        applyOptions(player, urlWithOptions.options);
         if (urlWithOptions.options.play)
             player.play();
-        player.one("ended", (_) => app.ports.videoEnded.send("ended"));
     });
 
     app.ports.sendOptions.subscribe(function (options) {
-        const player = videojs.players.mainPlayer;
-        player.loop(options.loop);
+        applyOptions(videojs.players.mainPlayer, options);
     });
 
 </script>

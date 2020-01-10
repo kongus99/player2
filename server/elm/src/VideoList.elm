@@ -6,6 +6,7 @@ import Bootstrap.ListGroup as ListGroup
 import Bootstrap.Utilities.Flex as Flex
 import Bootstrap.Utilities.Size as Size
 import Bootstrap.Utilities.Spacing as Spacing
+import Extra
 import Html exposing (..)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
@@ -145,45 +146,14 @@ type Msg
     | NeedsUpdate (WebData (Maybe Int))
 
 
-split : a -> List a -> List a
-split e lst =
-    let
-        tail =
-            List.tail lst |> Maybe.withDefault []
-    in
-    List.head lst
-        |> Maybe.map
-            (\x ->
-                if x == e then
-                    tail
-
-                else
-                    split e tail
-            )
-        |> Maybe.withDefault []
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         sendEdit video method =
             video |> Maybe.map (method NeedsUpdate) |> Maybe.withDefault Cmd.none
 
-        nextVideo : Model -> Maybe Video
-        nextVideo m =
-            let
-                videos =
-                    getVideos m
-
-                next =
-                    case m.selected |> Maybe.andThen (\s -> split s videos |> List.head) of
-                        Nothing ->
-                            List.head videos
-
-                        x ->
-                            x
-            in
-            next
+        nextVideo next m =
+            m.selected |> Maybe.andThen (\s -> next s <| getVideos m)
     in
     case msg of
         Fetch ->
@@ -230,11 +200,15 @@ update msg model =
             ( { model | options = newOptions }, Options.encode newOptions |> sendOptions )
 
         VideoEnded _ ->
-            if model.options.playlist then
-                update (Select <| nextVideo model) model
+            case ( model.options.playlist, model.options.loop ) of
+                ( True, True ) ->
+                    update (Select <| nextVideo Extra.cyclicNext model) model
 
-            else
-                ( model, Cmd.none )
+                ( True, False ) ->
+                    update (Select <| nextVideo Extra.next model) model
+
+                _ ->
+                    ( model, Cmd.none )
 
         Playlist ->
             ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
