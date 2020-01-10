@@ -13,8 +13,9 @@ import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
+import Url
 import Video exposing (Video)
-import Video.Edit as Edit exposing (Msg(..))
+import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
 import Video.Options as Options exposing (Options)
 
 
@@ -120,7 +121,7 @@ singleVideo selected video =
                 , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
                 ]
             ]
-        , p [ Spacing.mb1 ] [ text video.videoUrl ]
+        , p [ Spacing.mb1 ] [ text <| Url.toString video.videoUrl ]
         ]
 
 
@@ -149,9 +150,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        sendEdit video method =
-            video |> Maybe.map (method NeedsUpdate) |> Maybe.withDefault Cmd.none
-
         nextVideo next m =
             m.selected |> Maybe.andThen (\s -> next s <| getVideos m)
     in
@@ -162,23 +160,31 @@ update msg model =
         Select video ->
             ( { model | selected = video }
             , video
-                |> Maybe.map (\v -> Options.encodeWithUrl v.videoUrl model.options |> sendUrlWithOptions)
+                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) model.options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
             )
 
         Add m ->
             let
-                ( newModel, video ) =
+                ( newModel, cmd ) =
                     Edit.update m model.add
             in
-            ( { model | add = newModel }, sendEdit video Video.post )
+            if newModel.submitted then
+                ( { model | add = newModel |> resetSubmitted }, Video.get Fetched )
+
+            else
+                ( { model | add = newModel }, Cmd.map Add cmd )
 
         Edit m ->
             let
-                ( newModel, video ) =
+                ( newModel, cmd ) =
                     Edit.update m model.edit
             in
-            ( { model | edit = newModel }, sendEdit video Video.put )
+            if newModel.submitted then
+                ( { model | edit = newModel |> resetSubmitted }, Video.get Fetched )
+
+            else
+                ( { model | edit = newModel }, Cmd.map Edit cmd )
 
         Delete video ->
             ( model, Video.delete NeedsUpdate video )
