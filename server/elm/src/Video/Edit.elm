@@ -78,7 +78,7 @@ update msg model =
             )
 
         Submitted _ ->
-            ( { model | visible = Modal.hidden, submitted = True }, Cmd.none )
+            ( { model | visible = Modal.hidden, submitted = True, video = Nothing }, Cmd.none )
 
         Verified videoUrl webData ->
             let

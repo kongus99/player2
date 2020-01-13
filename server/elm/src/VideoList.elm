@@ -8,7 +8,7 @@ import Bootstrap.Utilities.Size as Size
 import Bootstrap.Utilities.Spacing as Spacing
 import Extra
 import Html exposing (..)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (attribute, href)
 import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
@@ -115,13 +115,18 @@ singleVideo selected video =
     ListGroup.anchor
         attributes
         [ div [ Flex.block, Flex.justifyBetween, Size.w100 ]
-            [ h5 [ Spacing.mb1 ] [ text video.title ]
+            [ h5
+                [ Spacing.mb1
+                , attribute "data-toggle" "tooltip"
+                , attribute "data-placement" "bottom"
+                , attribute "title" (Url.toString video.videoUrl)
+                ]
+                [ text video.title ]
             , ButtonGroup.buttonGroup []
                 [ Edit.editButton video Edit
                 , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
                 ]
             ]
-        , p [ Spacing.mb1 ] [ text <| Url.toString video.videoUrl ]
         ]
 
 
