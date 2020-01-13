@@ -14,7 +14,7 @@ type alias Meta =
 
 
 url videoUrl =
-    "https://www.youtube.com/oembed?url=" ++ Url.toString videoUrl ++ "&format=json"
+    "http://localhost:8080/meta?url=" ++ Url.toString videoUrl
 
 
 get : Url -> (WebData Meta -> msg) -> Cmd msg

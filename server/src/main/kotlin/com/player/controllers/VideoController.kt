@@ -8,13 +8,15 @@ import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.client.RestTemplate
 
 
 @RestController
 class VideoController {
     @Autowired
+    private val restTemplate: RestTemplate? = null
+    @Autowired
     private val dsl: DSLContext? = null
-
 
     @CrossOrigin
     @GetMapping("/video")
@@ -55,4 +57,10 @@ class VideoController {
         return dsl?.deleteFrom(VIDEO)?.where(VIDEO.ID.eq(id))?.returningResult(VIDEO.ID)?.fetchOne()?.component1()
     }
 
+    @CrossOrigin
+    @RequestMapping("/meta", params = ["url"])
+    fun proxy2(@RequestParam("url") videoUrl: String): String {
+        val url = "https://www.youtube.com/oembed?url=$videoUrl&format=json"
+        return restTemplate?.getForObject(url, String::class.java)!!
+    }
 }
