@@ -36,7 +36,7 @@ subscriptions _ =
 type alias Model =
     { add : Edit.Model
     , edit : Edit.Model
-    , videos : WebData (List Video)
+    , videos : List Video
     , selected : Maybe Video
     , options : Options
     }
@@ -55,45 +55,47 @@ view model =
             ]
         , Edit.modal Add model.add
         , Edit.modal Edit model.edit
-        , viewVideosOrError model
+        , viewVideos model
         ]
 
 
-viewVideosOrError : Model -> Html Msg
-viewVideosOrError model =
-    case model.videos of
+resolveFetch : WebData (List Video) -> List Video
+resolveFetch response =
+    let
+        resolveError : Http.Error -> String
+        resolveError httpError =
+            case httpError of
+                Http.BadUrl message ->
+                    message
+
+                Http.Timeout ->
+                    "Server is taking too long to respond. Please try again later."
+
+                Http.NetworkError ->
+                    "Unable to reach server."
+
+                Http.BadStatus statusCode ->
+                    "Request failed with status code: " ++ String.fromInt statusCode
+
+                Http.BadBody message ->
+                    message
+    in
+    case response of
         RemoteData.NotAsked ->
-            text ""
+            []
 
         RemoteData.Loading ->
-            h3 [] [ text "Loading..." ]
+            []
 
-        RemoteData.Success videos ->
-            viewVideos model.selected videos
-
-        RemoteData.Failure httpError ->
-            viewError (buildErrorMessage httpError)
-
-
-getVideos model =
-    case model.videos of
         RemoteData.Success videos ->
             videos
 
-        _ ->
+        RemoteData.Failure httpError ->
+            let
+                _ =
+                    Debug.log "Received error" (resolveError httpError)
+            in
             []
-
-
-viewError : String -> Html Msg
-viewError errorMessage =
-    let
-        errorHeading =
-            "Couldn't fetch videos at this time."
-    in
-    div []
-        [ h3 [] [ text errorHeading ]
-        , text ("Error: " ++ errorMessage)
-        ]
 
 
 singleVideo : Maybe Video -> Video -> ListGroup.CustomItem Msg
@@ -130,11 +132,11 @@ singleVideo selected video =
         ]
 
 
-viewVideos : Maybe Video -> List Video -> Html Msg
-viewVideos selected videos =
+viewVideos : Model -> Html Msg
+viewVideos model =
     div []
         [ h3 [] [ text "Video list" ]
-        , ListGroup.custom (List.map (singleVideo selected) videos)
+        , ListGroup.custom (List.map (singleVideo model.selected) model.videos)
         ]
 
 
@@ -156,11 +158,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         nextVideo next m =
-            m.selected |> Maybe.andThen (\s -> next s <| getVideos m)
+            m.selected |> Maybe.andThen (\s -> next s <| m.videos)
     in
     case msg of
         Fetch ->
-            ( { model | videos = RemoteData.Loading }, Video.get Fetched )
+            ( { model | videos = [] }, Video.get Fetched )
 
         Select video ->
             ( { model | selected = video }
@@ -195,7 +197,7 @@ update msg model =
             ( model, Video.delete NeedsUpdate video )
 
         Fetched response ->
-            ( { model | videos = response }, Cmd.none )
+            ( { model | videos = resolveFetch response }, Cmd.none )
 
         NeedsUpdate _ ->
             ( model, Video.get Fetched )
@@ -225,28 +227,9 @@ update msg model =
             ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
 
 
-buildErrorMessage : Http.Error -> String
-buildErrorMessage httpError =
-    case httpError of
-        Http.BadUrl message ->
-            message
-
-        Http.Timeout ->
-            "Server is taking too long to respond. Please try again later."
-
-        Http.NetworkError ->
-            "Unable to reach server."
-
-        Http.BadStatus statusCode ->
-            "Request failed with status code: " ++ String.fromInt statusCode
-
-        Http.BadBody message ->
-            message
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { videos = RemoteData.NotAsked
+    ( { videos = []
       , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
