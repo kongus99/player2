@@ -5,6 +5,7 @@ import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form.Input as Input
 import Bootstrap.Form.InputGroup as InputGroup
 import Bootstrap.Modal as Modal
+import Extra exposing (isJust)
 import Html exposing (Html, br, div, text)
 import RemoteData exposing (WebData)
 import Url exposing (Url)
@@ -87,7 +88,6 @@ update msg model =
                         RemoteData.Success meta ->
                             Just (Video Nothing meta.title videoUrl)
 
-                        --move this to backend, CORS problems
                         _ ->
                             Nothing
             in
@@ -138,6 +138,7 @@ modal mapper model =
                 [ Button.submitButton
                     [ Button.primary
                     , Button.onClick Submit
+                    , Button.disabled (not <| isJust model.video)
                     ]
                     [ text "Save" ]
                 ]

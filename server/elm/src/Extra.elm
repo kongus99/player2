@@ -39,3 +39,13 @@ otherwise other maybe =
 
         x ->
             x
+
+
+isJust : Maybe a -> Bool
+isJust maybe =
+    case maybe of
+        Nothing ->
+            False
+
+        Just _ ->
+            True

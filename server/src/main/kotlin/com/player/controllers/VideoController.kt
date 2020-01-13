@@ -60,6 +60,7 @@ class VideoController {
     @CrossOrigin
     @RequestMapping("/meta", params = ["url"])
     fun proxy2(@RequestParam("url") videoUrl: String): String {
+        // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
         val url = "https://www.youtube.com/oembed?url=$videoUrl&format=json"
         return restTemplate?.getForObject(url, String::class.java)!!
     }
