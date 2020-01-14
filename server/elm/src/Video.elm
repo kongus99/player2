@@ -41,7 +41,7 @@ post msg video =
         }
 
 
-delete : (WebData (Maybe Int) -> c) -> Video -> Cmd c
+delete : c -> Video -> Cmd c
 delete msg video =
     video.id
         |> Maybe.map
@@ -51,7 +51,7 @@ delete msg video =
                     , headers = []
                     , url = url ++ "/" ++ String.fromInt id
                     , body = Http.emptyBody
-                    , expect = Http.expectJson (RemoteData.fromResult >> msg) (nullable int)
+                    , expect = Http.expectJson (RemoteData.fromResult >> (\_ -> msg)) (nullable int)
                     , timeout = Nothing
                     , tracker = Nothing
                     }

@@ -13,6 +13,7 @@ import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
+import TextFilter exposing (TextFilter)
 import Url
 import Video exposing (Video)
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
@@ -36,8 +37,10 @@ subscriptions _ =
 type alias Model =
     { add : Edit.Model
     , edit : Edit.Model
-    , videos : List Video
+    , originalVideos : List Video
+    , filteredVideos : List Video
     , selected : Maybe Video
+    , filter : TextFilter
     , options : Options
     }
 
@@ -53,14 +56,15 @@ view model =
                 , ButtonGroup.checkboxButton model.options.playlist [ Button.info, Button.onClick Playlist ] [ text "Playlist" ]
                 ]
             ]
+        , TextFilter.input Filter model.filter
         , Edit.modal Add model.add
         , Edit.modal Edit model.edit
         , viewVideos model
         ]
 
 
-resolveFetch : WebData (List Video) -> List Video
-resolveFetch response =
+resolveFetch : WebData a -> a -> a
+resolveFetch response default =
     let
         resolveError : Http.Error -> String
         resolveError httpError =
@@ -82,10 +86,10 @@ resolveFetch response =
     in
     case response of
         RemoteData.NotAsked ->
-            []
+            default
 
         RemoteData.Loading ->
-            []
+            default
 
         RemoteData.Success videos ->
             videos
@@ -95,7 +99,7 @@ resolveFetch response =
                 _ =
                     Debug.log "Received error" (resolveError httpError)
             in
-            []
+            default
 
 
 singleVideo : Maybe Video -> Video -> ListGroup.CustomItem Msg
@@ -136,33 +140,33 @@ viewVideos : Model -> Html Msg
 viewVideos model =
     div []
         [ h3 [] [ text "Video list" ]
-        , ListGroup.custom (List.map (singleVideo model.selected) model.videos)
+        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
         ]
 
 
 type Msg
-    = Fetch
-    | Autoplay
+    = Autoplay
     | Loop
     | Playlist
     | VideoEnded String
-    | Add Edit.Msg
+    | Filter String
     | Select (Maybe Video)
+    | Add Edit.Msg
     | Edit Edit.Msg
     | Delete Video
+    | Fetch
     | Fetched (WebData (List Video))
-    | NeedsUpdate (WebData (Maybe Int))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         nextVideo next m =
-            m.selected |> Maybe.andThen (\s -> next s <| m.videos)
+            m.selected |> Maybe.andThen (\s -> next s <| m.filteredVideos)
     in
     case msg of
         Fetch ->
-            ( { model | videos = [] }, Video.get Fetched )
+            ( { model | originalVideos = [], filteredVideos = [] }, Video.get Fetched )
 
         Select video ->
             ( { model | selected = video }
@@ -194,13 +198,17 @@ update msg model =
                 ( { model | edit = newModel }, Cmd.map Edit cmd )
 
         Delete video ->
-            ( model, Video.delete NeedsUpdate video )
+            ( model, Video.delete Fetch video )
 
         Fetched response ->
-            ( { model | videos = resolveFetch response }, Cmd.none )
+            let
+                videos =
+                    resolveFetch response []
 
-        NeedsUpdate _ ->
-            ( model, Video.get Fetched )
+                filtered =
+                    videos |> List.filter (\v -> TextFilter.apply model.filter v.title)
+            in
+            ( { model | originalVideos = videos, filteredVideos = filtered }, Cmd.none )
 
         Autoplay ->
             ( { model | options = Options.togglePlay model.options }, Cmd.none )
@@ -226,13 +234,28 @@ update msg model =
         Playlist ->
             ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
 
+        Filter string ->
+            let
+                filter =
+                    TextFilter.parse string
+            in
+            ( { model
+                | filter = filter
+                , filteredVideos =
+                    model.originalVideos |> List.filter (\v -> TextFilter.apply filter v.title)
+              }
+            , Cmd.none
+            )
+
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { videos = []
+    ( { originalVideos = []
+      , filteredVideos = []
       , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
+      , filter = TextFilter.empty
       , options = Options.init
       }
     , Video.get Fetched
