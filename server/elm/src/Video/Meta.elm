@@ -5,7 +5,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import RemoteData exposing (WebData)
 import Url exposing (Url)
-import Video exposing (Video)
 
 
 type alias Meta =
@@ -13,8 +12,8 @@ type alias Meta =
     }
 
 
-url videoUrl =
-    "http://localhost:8080/meta?url=" ++ Url.toString videoUrl
+url metaUrl =
+    "/api/meta?url=" ++ Url.toString metaUrl
 
 
 get : Url -> (WebData Meta -> msg) -> Cmd msg

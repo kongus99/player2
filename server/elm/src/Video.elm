@@ -16,7 +16,7 @@ type alias Video =
 
 
 url =
-    "http://localhost:8080/video"
+    "/api/video"
 
 
 get : (WebData (List Video) -> msg) -> Cmd msg
