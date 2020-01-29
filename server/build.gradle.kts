@@ -14,23 +14,34 @@ plugins {
     kotlin("plugin.spring") version "1.3.61"
 }
 
-group = "com.player"
-version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
-repositories {
-    mavenCentral()
-}
-
 buildscript {
-    repositories {
-        mavenCentral()
-    }
     dependencies {
         classpath(group = "org.jooq", name = "jooq", version = "3.11.11")
         classpath(group = "org.jooq", name = "jooq-meta", version = "3.11.11")
         classpath(group = "org.jooq", name = "jooq-codegen", version = "3.11.11")
         classpath(group = "org.postgresql", name = "postgresql", version = "42.2.5")
+    }
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-jooq")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.flywaydb:flyway-core")
+    sourceSets {
+        main {
+            java {
+                srcDirs(jooqDir)
+            }
+        }
+    }
+    runtimeOnly("org.postgresql:postgresql")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
 }
 
@@ -55,25 +66,7 @@ tasks.register("buildMapping") {
     }
 }
 
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.flywaydb:flyway-core")
-    sourceSets {
-        main {
-            java {
-                srcDirs(jooqDir)
-            }
-        }
-    }
-    runtimeOnly("org.postgresql:postgresql")
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-    }
-}
+
 
 tasks.withType<Test> {
     useJUnitPlatform()
@@ -84,12 +77,13 @@ tasks.withType<KotlinCompile> {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = "1.8"
     }
+    dependsOn("buildMapping")
 }
 tasks.getByName<BootJar>("bootJar") {
-    from("elm/index.html") {
+    from("../elm/index.html") {
         into("static")
     }
-    from("elm/lib") {
+    from("../elm/lib") {
         into("static/lib")
     }
 }
