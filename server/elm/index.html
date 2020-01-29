@@ -5,9 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link href="node_modules/video.js/dist/video-js.min.css" rel="stylesheet"/>
-    <link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
-
+    <link href="lib/video.js/dist/video-js.min.css" rel="stylesheet"/>
+    <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <script src="lib/video.js/dist/video.min.js"></script>
+    <script src="lib/videojs-youtube/dist/Youtube.min.js"></script>
+    <script src="lib/compiled.min.js"></script>
 </head>
 
 <body>
@@ -22,20 +24,26 @@
                     class="video-js vjs-default-skin sticky-top"
                     controls
                     width="480" height="360"
-                    data-setup='{ "techOrder": ["youtube"], "sources": [{ "type": "video/youtube", "src": "https://www.youtube.com/watch?v="}], "youtube": { "ytControls": 0 } }'
             >
             </video>
         </div>
-
     </div>
 </div>
-<script src="node_modules/video.js/dist/video.min.js"></script>
-<script src="node_modules/videojs-youtube/dist/Youtube.min.js"></script>
-<script src="compiled.js"></script>
 <script>
     let app = Elm.Main.init({
         node: document.getElementById("elm-app")
     });
+    const playerOptions = {
+        techOrder: ["youtube"]
+        , sources: [
+            {
+                type: "video/youtube"
+                , src: "https://www.youtube.com/watch?v="
+            }
+        ]
+        , youtube: {ytControls: 0}
+    };
+    let player = videojs("mainPlayer", playerOptions);
     const applyOptions = (player, options) => {
         player.loop(options.loop);
         player.off("ended");
@@ -43,7 +51,6 @@
     };
 
     app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
-        const player = videojs.players.mainPlayer;
         player.src({src: urlWithOptions.url, type: 'video/youtube'});
         applyOptions(player, urlWithOptions.options);
         if (urlWithOptions.options.play)
@@ -51,7 +58,7 @@
     });
 
     app.ports.sendOptions.subscribe(function (options) {
-        applyOptions(videojs.players.mainPlayer, options);
+        applyOptions(player, options);
     });
 
 </script>

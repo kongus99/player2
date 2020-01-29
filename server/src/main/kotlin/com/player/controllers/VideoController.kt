@@ -19,20 +19,20 @@ class VideoController {
     private val dsl: DSLContext? = null
 
     @CrossOrigin
-    @GetMapping("/video")
+    @GetMapping("/api/video")
     fun videos(): List<Video>? {
         return dsl?.selectFrom(VIDEO)?.orderBy(VIDEO.ID.asc())?.map { r -> fromVideoRecord(r) }
     }
 
     @CrossOrigin
-    @GetMapping("/video/{id}")
+    @GetMapping("/api/video/{id}")
     fun video(@PathVariable("id") id: Long): Video? {
         return dsl?.selectFrom(VIDEO)?.where(VIDEO.ID.eq(id.toInt()))?.first()?.map { r -> fromRecord(r) }
     }
 
     @CrossOrigin
     @Transactional
-    @PostMapping("/video")
+    @PostMapping("/api/video")
     fun createVideo(@RequestBody video: Video): Int? {
         return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
                 ?.values(video.title, video.videoUrl)?.returning()
@@ -41,7 +41,7 @@ class VideoController {
 
     @CrossOrigin
     @Transactional
-    @PutMapping("/video")
+    @PutMapping("/api/video")
     fun editVideo(@RequestBody video: Video): Int? {
         return dsl?.update(VIDEO)
                 ?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEOURL, video.videoUrl)
@@ -52,13 +52,13 @@ class VideoController {
 
     @CrossOrigin
     @Transactional
-    @DeleteMapping("/video/{id}")
+    @DeleteMapping("/api/video/{id}")
     fun deleteVideo(@PathVariable("id") id: Int): Int? {
         return dsl?.deleteFrom(VIDEO)?.where(VIDEO.ID.eq(id))?.returningResult(VIDEO.ID)?.fetchOne()?.component1()
     }
 
     @CrossOrigin
-    @RequestMapping("/meta", params = ["url"])
+    @RequestMapping("/api/meta", params = ["url"])
     fun proxy2(@RequestParam("url") videoUrl: String): String {
         // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
         val url = "https://www.youtube.com/oembed?url=$videoUrl&format=json"

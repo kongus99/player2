@@ -2,14 +2,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jooq.meta.jaxb.*
 import org.jooq.meta.jaxb.Configuration
 import org.jooq.meta.jaxb.Target
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
 plugins {
+    java
     id("org.springframework.boot") version "2.2.1.RELEASE"
     id("io.spring.dependency-management") version "1.0.8.RELEASE"
-    id("org.jetbrains.kotlin.jvm") version "1.3.61"
-    id("org.jetbrains.kotlin.plugin.spring") version "1.3.61"
+    kotlin("jvm") version "1.3.61"
+    kotlin("plugin.spring") version "1.3.61"
 }
 
 group = "com.player"
@@ -81,5 +83,13 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = "1.8"
+    }
+}
+tasks.getByName<BootJar>("bootJar") {
+    from("elm/index.html") {
+        into("static")
+    }
+    from("elm/lib") {
+        into("static/lib")
     }
 }

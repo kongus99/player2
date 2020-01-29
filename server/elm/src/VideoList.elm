@@ -95,10 +95,10 @@ resolveFetch response default =
             videos
 
         RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "Received error" (resolveError httpError)
-            in
+            --let
+            --    _ =
+            --        Debug.log "Received error" (resolveError httpError)
+            --in
             default
 
 
