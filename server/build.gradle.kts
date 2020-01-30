@@ -49,6 +49,7 @@ dependencies {
 
 tasks.register("buildMapping") {
     doLast {
+        println(jooqUrl)
         val withGenerator = Configuration()
                 .withJdbc(Jdbc()
                         .withDriver("org.postgresql.Driver")
