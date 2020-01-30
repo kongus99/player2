@@ -1,3 +1,3 @@
 rootProject.name = "server"
-//include("elm")
+include("elm")
 include("server")

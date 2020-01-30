@@ -80,6 +80,7 @@ tasks.withType<KotlinCompile> {
     dependsOn("buildMapping")
 }
 tasks.getByName<BootJar>("bootJar") {
+    dependsOn(":elm:uglify")
     from("../elm/index.html") {
         into("static")
     }
