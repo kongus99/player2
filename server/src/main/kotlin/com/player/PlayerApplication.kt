@@ -17,8 +17,8 @@ class PlayerApplication {
             val template = RestTemplate()
             val factory = SimpleClientHttpRequestFactory()
             val address = InetSocketAddress("10.144.1.10", 8080)
-            val proxy = Proxy(Proxy.Type.HTTP, address)
-            factory.setProxy(proxy)
+//            val proxy = Proxy(Proxy.Type.HTTP, address)
+//            factory.setProxy(proxy)
             template.requestFactory = factory
             return template
         }
