@@ -6,6 +6,8 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
+val jooqUrl: String by project
+
 plugins {
     java
     id("org.springframework.boot") version "2.2.1.RELEASE"
@@ -50,9 +52,7 @@ tasks.register("buildMapping") {
         val withGenerator = Configuration()
                 .withJdbc(Jdbc()
                         .withDriver("org.postgresql.Driver")
-                        .withUrl("jdbc:postgresql://localhost:5432/player")
-                        .withUser("postgres")
-                        .withPassword("postgres"))
+                        .withUrl(jooqUrl))
                 .withGenerator(Generator()
                         .withDatabase(Database()
                                 .withName("org.jooq.meta.postgres.PostgresDatabase")
