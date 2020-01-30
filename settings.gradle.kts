@@ -1,3 +1,3 @@
-rootProject.name = "server"
+rootProject.name = "ytplayit"
 include("elm")
 include("server")
