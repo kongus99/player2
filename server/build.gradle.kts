@@ -6,13 +6,14 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
-val jooqUrl = System.getenv("JDBC_DATABASE_URL")
-val jooqUser = System.getenv("JDBC_DATABASE_USERNAME")
-val jooqPswd = System.getenv("JDBC_DATABASE_PASSWORD")
+val dbUrl = System.getenv("JDBC_DATABASE_URL")
+val dbUser = System.getenv("JDBC_DATABASE_USERNAME")
+val dbPassword = System.getenv("JDBC_DATABASE_PASSWORD")
 
 
 plugins {
     java
+    id("org.flywaydb.flyway") version "6.2.1"
     id("org.springframework.boot") version "2.2.1.RELEASE"
     id("io.spring.dependency-management") version "1.0.8.RELEASE"
     kotlin("jvm") version "1.3.61"
@@ -36,7 +37,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.flywaydb:flyway-core")
     sourceSets {
         main {
             java {
@@ -50,15 +50,23 @@ dependencies {
     }
 }
 
+flyway{
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+}
+
+
 tasks.register("buildMapping") {
+    dependsOn("flywayMigrate")
     doLast {
-        println(jooqUrl)
+        println(dbUrl)
         val withGenerator = Configuration()
                 .withJdbc(Jdbc()
                         .withDriver("org.postgresql.Driver")
-                        .withUrl(jooqUrl)
-                        .withUser(jooqUser)
-                        .withPassword(jooqPswd))
+                        .withUrl(dbUrl)
+                        .withUser(dbUser)
+                        .withPassword(dbPassword))
                 .withGenerator(Generator()
                         .withDatabase(Database()
                                 .withName("org.jooq.meta.postgres.PostgresDatabase")

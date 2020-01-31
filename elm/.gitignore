@@ -5,3 +5,4 @@ repl-temp-*
 *.js
 /lib/
 /node_modules/
+/yarn.lock
