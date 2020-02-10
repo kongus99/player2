@@ -26,6 +26,7 @@ class PlayerApplication {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
+            System.getenv().toList().sortedBy { it.first.toString() }.forEach { println(it) }
             SpringApplication.run(PlayerApplication::class.java, *args)
         }
     }
