@@ -6,10 +6,9 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
-val dbUrl = System.getenv("JDBC_DATABASE_URL")
-val dbUser = System.getenv("JDBC_DATABASE_USERNAME")
-val dbPassword = System.getenv("JDBC_DATABASE_PASSWORD")
-println("Your url sir, $dbUrl")
+val dbUrl = System.getProperties()["JDBC_DATABASE_URL"].toString()
+val dbUser = System.getProperties()["JDBC_DATABASE_USERNAME"].toString()
+val dbPassword = System.getProperties()["JDBC_DATABASE_PASSWORD"].toString()
 
 plugins {
     java
