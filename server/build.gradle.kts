@@ -6,6 +6,9 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
+val allProps = System.getProperties()
+println("All props $allProps")
+
 val dbUrl = System.getProperties()["JDBC_DATABASE_URL"]?.toString() ?: "jdbc:postgresql://localhost:5432/player"
 val dbUser = System.getProperties()["JDBC_DATABASE_USERNAME"]?.toString() ?: "postgres"
 val dbPassword = System.getProperties()["JDBC_DATABASE_PASSWORD"]?.toString() ?: "postgres"
