@@ -9,8 +9,8 @@ import Extra exposing (isJust)
 import Html exposing (Html, br, div, text)
 import RemoteData exposing (WebData)
 import Url exposing (Url)
-import Video exposing (Video)
 import Video.Meta as Meta exposing (Meta)
+import Video.Video as Video exposing (Video)
 
 
 type alias Model =

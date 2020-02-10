@@ -1,4 +1,4 @@
-port module VideoList exposing (..)
+port module Video.List exposing (..)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup exposing (ButtonItem)
@@ -15,9 +15,9 @@ import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
-import Video exposing (Video)
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
 import Video.Options as Options exposing (Options)
+import Video.Video as Video exposing (Video)
 
 
 port sendUrlWithOptions : Encode.Value -> Cmd msg
@@ -248,8 +248,8 @@ update msg model =
             )
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+init : ( Model, Cmd Msg )
+init =
     ( { originalVideos = []
       , filteredVideos = []
       , add = Edit.init
