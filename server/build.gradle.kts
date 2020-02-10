@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 val jooqDir = "${buildDir}/generated-sources/java"
 
-System.getenv().toList().sortedBy { it.first.toString() }.forEach { println(it) }
+//System.getenv().toList().sortedBy { it.first.toString() }.forEach { println(it) }
 
 val dbUrl = System.getenv()["JDBC_DATABASE_URL"] ?: "jdbc:postgresql://localhost:5432/player"
 val dbUser = System.getenv()["JDBC_DATABASE_USERNAME"] ?: "postgres"
