@@ -9,7 +9,7 @@ val jooqDir = "${buildDir}/generated-sources/java"
 val dbUrl = System.getenv("JDBC_DATABASE_URL")
 val dbUser = System.getenv("JDBC_DATABASE_USERNAME")
 val dbPassword = System.getenv("JDBC_DATABASE_PASSWORD")
-
+println("Your url sir, $dbUrl")
 
 plugins {
     java
