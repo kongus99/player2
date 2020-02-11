@@ -37,7 +37,6 @@ type alias Model =
     , originalVideos : List Video
     , filteredVideos : List Video
     , selected : Maybe Video
-    , filter : TextFilter
     }
 
 
@@ -47,7 +46,6 @@ view model =
         [ ButtonGroup.toolbar []
             [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
             ]
-        , TextFilter.input Filter model.filter
         , Edit.modal Add model.add
         , Edit.modal Edit model.edit
         , viewVideos model
@@ -134,7 +132,6 @@ viewVideos model =
 
 type Msg
     = VideoEnded String
-    | Filter String
     | Select (Maybe Video)
     | Add Edit.Msg
     | Edit Edit.Msg
@@ -143,8 +140,7 @@ type Msg
     | Fetched (WebData (List Video))
 
 
-update : Options -> Msg -> Model -> ( Model, Cmd Msg )
-update options msg model =
+update filter options msg model =
     let
         nextVideo next m =
             m.selected |> Maybe.andThen (\s -> next s <| m.filteredVideos)
@@ -186,38 +182,25 @@ update options msg model =
             ( model, Video.delete Fetch video )
 
         Fetched response ->
-            let
-                videos =
-                    resolveFetch response []
-
-                filtered =
-                    videos |> List.filter (\v -> TextFilter.apply model.filter v.title)
-            in
-            ( { model | originalVideos = videos, filteredVideos = filtered }, Cmd.none )
+            ( { model | originalVideos = resolveFetch response [] } |> filterList filter, Cmd.none )
 
         VideoEnded _ ->
             case ( Options.active Playlist options, Options.active Loop options ) of
                 ( True, True ) ->
-                    update options (Select <| nextVideo Extra.cyclicNext model) model
+                    update filter options (Select <| nextVideo Extra.cyclicNext model) model
 
                 ( True, False ) ->
-                    update options (Select <| nextVideo Extra.next model) model
+                    update filter options (Select <| nextVideo Extra.next model) model
 
                 _ ->
                     ( model, Cmd.none )
 
-        Filter string ->
-            let
-                filter =
-                    TextFilter.parse string
-            in
-            ( { model
-                | filter = filter
-                , filteredVideos =
-                    model.originalVideos |> List.filter (\v -> TextFilter.apply filter v.title)
-              }
-            , Cmd.none
-            )
+
+filterList filter model =
+    { model
+        | filteredVideos =
+            model.originalVideos |> List.filter (\v -> TextFilter.apply filter v.title)
+    }
 
 
 init : ( Model, Cmd Msg )
@@ -227,7 +210,6 @@ init =
       , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
-      , filter = TextFilter.empty
       }
     , Video.get Fetched
     )

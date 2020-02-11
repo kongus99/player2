@@ -4,8 +4,9 @@ import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
 import Html exposing (Html, text)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
+import TextFilter exposing (TextFilter)
 import Video.List as List
 import Video.Options as Options exposing (Option(..), Options)
 
@@ -14,11 +15,12 @@ port sendOptions : Encode.Value -> Cmd msg
 
 
 type alias Model =
-    { list : List.Model, navbar : Navbar.State, options : Options }
+    { list : List.Model, navbar : Navbar.State, options : Options, filter : TextFilter }
 
 
 type Msg
     = Toggle Option
+    | Filter String
     | ListMsg List.Msg
     | NavbarMsg Navbar.State
 
@@ -31,7 +33,7 @@ init _ =
         ( navbar, navbarCmd ) =
             Navbar.initialState NavbarMsg
     in
-    ( { list = list, navbar = navbar, options = Options.init }
+    ( { list = list, navbar = navbar, options = Options.init, filter = TextFilter.empty }
     , Cmd.batch [ Cmd.map ListMsg listCmd, navbarCmd ]
     )
 
@@ -49,7 +51,7 @@ update msg model =
         ListMsg m ->
             let
                 ( list, listCmd ) =
-                    List.update model.options m model.list
+                    List.update model.filter model.options m model.list
             in
             ( { model | list = list }, Cmd.map ListMsg listCmd )
 
@@ -71,13 +73,25 @@ update msg model =
             in
             ( { model | options = options }, cmd )
 
+        Filter string ->
+            let
+                filter =
+                    TextFilter.parse string
+            in
+            ( { model
+                | filter = filter
+                , list = List.filterList filter model.list
+              }
+            , Cmd.none
+            )
+
 
 view model =
     Grid.containerFluid []
         [ Grid.row [ Row.centerLg ]
             [ Grid.col [] [ navbarView model ]
             ]
-        , Grid.row [ Row.centerLg ]
+        , Grid.row [ Row.centerLg, Row.attrs [ class "jumbotron jumbotron-fluid" ] ]
             [ Grid.col [] [ List.view model.list |> Html.map ListMsg ]
             ]
         ]
@@ -93,5 +107,8 @@ navbarView model =
             [ Options.itemLink Toggle Autoplay model.options
             , Options.itemLink Toggle Loop model.options
             , Options.itemLink Toggle Playlist model.options
+            ]
+        |> Navbar.customItems
+            [ TextFilter.navbar Filter model.filter
             ]
         |> Navbar.view model.navbar
