@@ -16,14 +16,11 @@ import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
-import Video.Options as Options exposing (Options)
+import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video exposing (Video)
 
 
 port sendUrlWithOptions : Encode.Value -> Cmd msg
-
-
-port sendOptions : Encode.Value -> Cmd msg
 
 
 port videoEnded : (String -> msg) -> Sub msg
@@ -41,7 +38,6 @@ type alias Model =
     , filteredVideos : List Video
     , selected : Maybe Video
     , filter : TextFilter
-    , options : Options
     }
 
 
@@ -50,11 +46,6 @@ view model =
     div []
         [ ButtonGroup.toolbar []
             [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
-            , ButtonGroup.checkboxButtonGroupItem [ ButtonGroup.attrs [ Spacing.ml1 ] ]
-                [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ]
-                , ButtonGroup.checkboxButton model.options.loop [ Button.info, Button.onClick Loop ] [ text "Loop" ]
-                , ButtonGroup.checkboxButton model.options.playlist [ Button.info, Button.onClick Playlist ] [ text "Playlist" ]
-                ]
             ]
         , TextFilter.input Filter model.filter
         , Edit.modal Add model.add
@@ -138,17 +129,11 @@ singleVideo selected video =
 
 viewVideos : Model -> Html Msg
 viewVideos model =
-    div []
-        [ h3 [] [ text "Video list" ]
-        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
-        ]
+    ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
 
 
 type Msg
-    = Autoplay
-    | Loop
-    | Playlist
-    | VideoEnded String
+    = VideoEnded String
     | Filter String
     | Select (Maybe Video)
     | Add Edit.Msg
@@ -158,8 +143,8 @@ type Msg
     | Fetched (WebData (List Video))
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Options -> Msg -> Model -> ( Model, Cmd Msg )
+update options msg model =
     let
         nextVideo next m =
             m.selected |> Maybe.andThen (\s -> next s <| m.filteredVideos)
@@ -171,7 +156,7 @@ update msg model =
         Select video ->
             ( { model | selected = video }
             , video
-                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) model.options |> sendUrlWithOptions)
+                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
             )
 
@@ -210,29 +195,16 @@ update msg model =
             in
             ( { model | originalVideos = videos, filteredVideos = filtered }, Cmd.none )
 
-        Autoplay ->
-            ( { model | options = Options.togglePlay model.options }, Cmd.none )
-
-        Loop ->
-            let
-                newOptions =
-                    Options.toggleLoop model.options
-            in
-            ( { model | options = newOptions }, Options.encode newOptions |> sendOptions )
-
         VideoEnded _ ->
-            case ( model.options.playlist, model.options.loop ) of
+            case ( Options.active Playlist options, Options.active Loop options ) of
                 ( True, True ) ->
-                    update (Select <| nextVideo Extra.cyclicNext model) model
+                    update options (Select <| nextVideo Extra.cyclicNext model) model
 
                 ( True, False ) ->
-                    update (Select <| nextVideo Extra.next model) model
+                    update options (Select <| nextVideo Extra.next model) model
 
                 _ ->
                     ( model, Cmd.none )
-
-        Playlist ->
-            ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
 
         Filter string ->
             let
@@ -256,7 +228,6 @@ init =
       , edit = Edit.init
       , selected = Nothing
       , filter = TextFilter.empty
-      , options = Options.init
       }
     , Video.get Fetched
     )

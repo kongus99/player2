@@ -1,38 +1,54 @@
 module Video.Options exposing (..)
 
+import Bootstrap.Navbar as Navbar
+import Html exposing (text)
+import Html.Attributes exposing (href)
+import Html.Events exposing (onClick)
 import Json.Encode as Encode
 
 
+type Option
+    = Autoplay
+    | Loop
+    | Playlist
+
+
 type alias Options =
-    { play : Bool
-    , loop : Bool
-    , playlist : Bool
-    }
+    List Option
 
 
 init =
-    { play = False, loop = True, playlist = False }
+    [ Loop ]
 
 
-togglePlay : Options -> Options
-togglePlay options =
-    { options | play = not options.play }
+toString option =
+    case option of
+        Autoplay ->
+            "Autoplay"
+
+        Loop ->
+            "Loop"
+
+        Playlist ->
+            "Playlist"
 
 
-toggleLoop : Options -> Options
-toggleLoop options =
-    { options | loop = not options.loop }
+active option options =
+    List.any (\o -> o == option) options
 
 
-togglePlaylist : Options -> Options
-togglePlaylist options =
-    { options | playlist = not options.playlist }
+toggle option options =
+    if active option options then
+        List.filter (\o -> not <| o == option) options
+
+    else
+        option :: options
 
 
 encode options =
     Encode.object
-        [ ( "play", Encode.bool options.play )
-        , ( "loop", Encode.bool (not options.playlist && options.loop) )
+        [ ( "play", Encode.bool <| active Autoplay options )
+        , ( "loop", Encode.bool <| (not (active Playlist options) && active Loop options) )
         ]
 
 
@@ -42,3 +58,11 @@ encodeWithUrl url options =
         [ ( "url", Encode.string url )
         , ( "options", encode options )
         ]
+
+
+itemLink msg option options =
+    if active option options then
+        Navbar.itemLinkActive [ href "#", onClick <| msg option ] [ text (toString option) ]
+
+    else
+        Navbar.itemLink [ href "#", onClick <| msg option ] [ text (toString option) ]
