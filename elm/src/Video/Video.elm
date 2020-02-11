@@ -1,4 +1,4 @@
-module Video exposing (Video, delete, get, post, put)
+module Video.Video exposing (Video, delete, get, post, put)
 
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, nullable)

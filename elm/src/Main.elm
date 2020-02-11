@@ -1,23 +1,14 @@
 module Main exposing (main)
 
-import Bootstrap.Grid as Grid
-import Bootstrap.Grid.Row as Row
 import Browser
-import VideoList
+import Video.Page as Page
 
 
+main : Program () Page.Model Page.Msg
 main =
     Browser.element
-        { init = VideoList.init
-        , view = view
-        , update = VideoList.update
-        , subscriptions = VideoList.subscriptions
+        { init = Page.init
+        , view = Page.view
+        , update = Page.update
+        , subscriptions = Page.subscriptions
         }
-
-
-view model =
-    Grid.containerFluid []
-        [ Grid.row [ Row.centerLg ]
-            [ Grid.col [] [ VideoList.view model ]
-            ]
-        ]

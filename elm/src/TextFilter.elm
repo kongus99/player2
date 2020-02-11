@@ -1,9 +1,8 @@
 module TextFilter exposing (..)
 
 import Bootstrap.Form.Input as Input
-import Bootstrap.Form.InputGroup as InputGroup
-import Bootstrap.Utilities.Spacing as Spacing
-import Html exposing (text)
+import Bootstrap.Navbar as Navbar
+import Html.Attributes exposing (title)
 
 
 type Filter
@@ -68,10 +67,12 @@ empty =
     TextFilter "" []
 
 
-input msg filter =
-    InputGroup.config
-        (InputGroup.text [ Input.placeholder "Enter filter - alphanumerical values separated by &, possibly negated by !", Input.value filter.original, Input.onInput msg ])
-        |> InputGroup.predecessors
-            [ InputGroup.span [] [ text "Filter" ] ]
-        |> InputGroup.attrs [ Spacing.mt1 ]
-        |> InputGroup.view
+navbar msg filter =
+    Navbar.formItem []
+        [ Input.search
+            [ Input.placeholder "Filter"
+            , Input.value filter.original
+            , Input.onInput msg
+            , Input.attrs [ title "Enter filter - alphanumerical values separated by &, possibly negated by !" ]
+            ]
+        ]

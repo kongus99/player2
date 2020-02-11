@@ -1,4 +1,4 @@
-port module VideoList exposing (..)
+port module Video.List exposing (..)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup exposing (ButtonItem)
@@ -15,15 +15,12 @@ import Json.Encode as Encode
 import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
-import Video exposing (Video)
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
-import Video.Options as Options exposing (Options)
+import Video.Options as Options exposing (Option(..), Options)
+import Video.Video as Video exposing (Video)
 
 
 port sendUrlWithOptions : Encode.Value -> Cmd msg
-
-
-port sendOptions : Encode.Value -> Cmd msg
 
 
 port videoEnded : (String -> msg) -> Sub msg
@@ -35,31 +32,18 @@ subscriptions _ =
 
 
 type alias Model =
-    { add : Edit.Model
-    , edit : Edit.Model
+    { edit : Edit.Model
     , originalVideos : List Video
     , filteredVideos : List Video
     , selected : Maybe Video
-    , filter : TextFilter
-    , options : Options
     }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ ButtonGroup.toolbar []
-            [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
-            , ButtonGroup.checkboxButtonGroupItem [ ButtonGroup.attrs [ Spacing.ml1 ] ]
-                [ ButtonGroup.checkboxButton model.options.play [ Button.info, Button.onClick Autoplay ] [ text "Autoplay" ]
-                , ButtonGroup.checkboxButton model.options.loop [ Button.info, Button.onClick Loop ] [ text "Loop" ]
-                , ButtonGroup.checkboxButton model.options.playlist [ Button.info, Button.onClick Playlist ] [ text "Playlist" ]
-                ]
-            ]
-        , TextFilter.input Filter model.filter
-        , Edit.modal Add model.add
-        , Edit.modal Edit model.edit
-        , viewVideos model
+        [ Edit.modal Edit model.edit
+        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
         ]
 
 
@@ -136,30 +120,16 @@ singleVideo selected video =
         ]
 
 
-viewVideos : Model -> Html Msg
-viewVideos model =
-    div []
-        [ h3 [] [ text "Video list" ]
-        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
-        ]
-
-
 type Msg
-    = Autoplay
-    | Loop
-    | Playlist
-    | VideoEnded String
-    | Filter String
+    = VideoEnded String
     | Select (Maybe Video)
-    | Add Edit.Msg
     | Edit Edit.Msg
     | Delete Video
     | Fetch
     | Fetched (WebData (List Video))
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update filter options msg model =
     let
         nextVideo next m =
             m.selected |> Maybe.andThen (\s -> next s <| m.filteredVideos)
@@ -171,20 +141,9 @@ update msg model =
         Select video ->
             ( { model | selected = video }
             , video
-                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) model.options |> sendUrlWithOptions)
+                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
             )
-
-        Add m ->
-            let
-                ( newModel, cmd ) =
-                    Edit.update m model.add
-            in
-            if newModel.submitted then
-                ( { model | add = newModel |> resetSubmitted }, Video.get Fetched )
-
-            else
-                ( { model | add = newModel }, Cmd.map Add cmd )
 
         Edit m ->
             let
@@ -201,62 +160,33 @@ update msg model =
             ( model, Video.delete Fetch video )
 
         Fetched response ->
-            let
-                videos =
-                    resolveFetch response []
-
-                filtered =
-                    videos |> List.filter (\v -> TextFilter.apply model.filter v.title)
-            in
-            ( { model | originalVideos = videos, filteredVideos = filtered }, Cmd.none )
-
-        Autoplay ->
-            ( { model | options = Options.togglePlay model.options }, Cmd.none )
-
-        Loop ->
-            let
-                newOptions =
-                    Options.toggleLoop model.options
-            in
-            ( { model | options = newOptions }, Options.encode newOptions |> sendOptions )
+            ( { model | originalVideos = resolveFetch response [] } |> filterList filter, Cmd.none )
 
         VideoEnded _ ->
-            case ( model.options.playlist, model.options.loop ) of
+            case ( Options.active Playlist options, Options.active Loop options ) of
                 ( True, True ) ->
-                    update (Select <| nextVideo Extra.cyclicNext model) model
+                    update filter options (Select <| nextVideo Extra.cyclicNext model) model
 
                 ( True, False ) ->
-                    update (Select <| nextVideo Extra.next model) model
+                    update filter options (Select <| nextVideo Extra.next model) model
 
                 _ ->
                     ( model, Cmd.none )
 
-        Playlist ->
-            ( { model | options = Options.togglePlaylist model.options }, Cmd.none )
 
-        Filter string ->
-            let
-                filter =
-                    TextFilter.parse string
-            in
-            ( { model
-                | filter = filter
-                , filteredVideos =
-                    model.originalVideos |> List.filter (\v -> TextFilter.apply filter v.title)
-              }
-            , Cmd.none
-            )
+filterList filter model =
+    { model
+        | filteredVideos =
+            model.originalVideos |> List.filter (\v -> TextFilter.apply filter v.title)
+    }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+init : ( Model, Cmd Msg )
+init =
     ( { originalVideos = []
       , filteredVideos = []
-      , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
-      , filter = TextFilter.empty
-      , options = Options.init
       }
     , Video.get Fetched
     )
