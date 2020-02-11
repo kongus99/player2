@@ -32,8 +32,7 @@ subscriptions _ =
 
 
 type alias Model =
-    { add : Edit.Model
-    , edit : Edit.Model
+    { edit : Edit.Model
     , originalVideos : List Video
     , filteredVideos : List Video
     , selected : Maybe Video
@@ -43,12 +42,8 @@ type alias Model =
 view : Model -> Html Msg
 view model =
     div []
-        [ ButtonGroup.toolbar []
-            [ ButtonGroup.buttonGroupItem [] [ Edit.addButton Add ]
-            ]
-        , Edit.modal Add model.add
-        , Edit.modal Edit model.edit
-        , viewVideos model
+        [ Edit.modal Edit model.edit
+        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
         ]
 
 
@@ -125,15 +120,9 @@ singleVideo selected video =
         ]
 
 
-viewVideos : Model -> Html Msg
-viewVideos model =
-    ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
-
-
 type Msg
     = VideoEnded String
     | Select (Maybe Video)
-    | Add Edit.Msg
     | Edit Edit.Msg
     | Delete Video
     | Fetch
@@ -155,17 +144,6 @@ update filter options msg model =
                 |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
             )
-
-        Add m ->
-            let
-                ( newModel, cmd ) =
-                    Edit.update m model.add
-            in
-            if newModel.submitted then
-                ( { model | add = newModel |> resetSubmitted }, Video.get Fetched )
-
-            else
-                ( { model | add = newModel }, Cmd.map Add cmd )
 
         Edit m ->
             let
@@ -207,7 +185,6 @@ init : ( Model, Cmd Msg )
 init =
     ( { originalVideos = []
       , filteredVideos = []
-      , add = Edit.init
       , edit = Edit.init
       , selected = Nothing
       }

@@ -94,9 +94,9 @@ update msg model =
             ( { model | video = video }, Cmd.none )
 
 
-addButton : (Msg -> msg) -> ButtonGroup.ButtonItem msg
+addButton : (Msg -> a) -> Html a
 addButton mapper =
-    ButtonGroup.button [ Button.primary, Button.onClick (mapper (Open Nothing)) ] [ text "Add" ]
+    Button.button [ Button.success, Button.onClick (mapper (Open Nothing)) ] [ text "+" ]
 
 
 editButton : Video -> (Msg -> msg) -> ButtonGroup.ButtonItem msg

@@ -7,20 +7,28 @@ import Html exposing (Html, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
 import TextFilter exposing (TextFilter)
-import Video.List as List
+import Video.Edit as Edit exposing (resetSubmitted)
+import Video.List as List exposing (Msg(..))
 import Video.Options as Options exposing (Option(..), Options)
+import Video.Video as Video
 
 
 port sendOptions : Encode.Value -> Cmd msg
 
 
 type alias Model =
-    { list : List.Model, navbar : Navbar.State, options : Options, filter : TextFilter }
+    { add : Edit.Model
+    , list : List.Model
+    , navbar : Navbar.State
+    , options : Options
+    , filter : TextFilter
+    }
 
 
 type Msg
     = Toggle Option
     | Filter String
+    | Add Edit.Msg
     | ListMsg List.Msg
     | NavbarMsg Navbar.State
 
@@ -33,7 +41,12 @@ init _ =
         ( navbar, navbarCmd ) =
             Navbar.initialState NavbarMsg
     in
-    ( { list = list, navbar = navbar, options = Options.init, filter = TextFilter.empty }
+    ( { add = Edit.init
+      , list = list
+      , navbar = navbar
+      , options = Options.init
+      , filter = TextFilter.empty
+      }
     , Cmd.batch [ Cmd.map ListMsg listCmd, navbarCmd ]
     )
 
@@ -85,6 +98,17 @@ update msg model =
             , Cmd.none
             )
 
+        Add m ->
+            let
+                ( newModel, cmd ) =
+                    Edit.update m model.add
+            in
+            if newModel.submitted then
+                ( { model | add = newModel |> resetSubmitted }, Video.get (ListMsg << Fetched) )
+
+            else
+                ( { model | add = newModel }, Cmd.map Add cmd )
+
 
 view model =
     Grid.containerFluid []
@@ -110,5 +134,7 @@ navbarView model =
             ]
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
+            , Navbar.customItem <| Edit.modal Add model.add
+            , Navbar.customItem <| Edit.addButton Add
             ]
         |> Navbar.view model.navbar
