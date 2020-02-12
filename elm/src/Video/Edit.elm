@@ -34,7 +34,6 @@ setVideo model video =
                 |> Maybe.map Url.toString
                 |> Maybe.withDefault ""
         , videoId = Just video.videoId
-        , vid = Just video
     }
 
 
@@ -59,7 +58,7 @@ update msg model =
                 openModal =
                     { model | visible = Modal.shown }
             in
-            ( video |> Maybe.map (setVideo openModal) |> Maybe.withDefault openModal, Cmd.none )
+            ( video |> Maybe.map (setVideo openModal) |> Maybe.withDefault openModal, Task.succeed () |> Task.perform VerifyUrl )
 
         Submit ->
             let
