@@ -12,14 +12,14 @@ type alias Meta =
     }
 
 
-url metaUrl =
-    "/api/meta?url=" ++ Url.toString metaUrl
+url videoId =
+    "/api/meta?vid=" ++ videoId
 
 
-get : Url -> (WebData Meta -> msg) -> Cmd msg
-get videoUrl msg =
+get : String -> (WebData Meta -> msg) -> Cmd msg
+get videoId msg =
     Http.get
-        { url = url videoUrl
+        { url = url videoId
         , expect =
             decode
                 |> Http.expectJson (RemoteData.fromResult >> msg)

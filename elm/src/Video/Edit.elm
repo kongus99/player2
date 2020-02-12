@@ -8,7 +8,6 @@ import Bootstrap.Modal as Modal
 import Extra exposing (isJust)
 import Html exposing (Html, br, div, text)
 import RemoteData exposing (WebData)
-import Url exposing (Url)
 import Video.Meta as Meta exposing (Meta)
 import Video.Video as Video exposing (Video)
 
@@ -35,7 +34,7 @@ type Msg
     | Open (Maybe Video)
     | Submit
     | Submitted (WebData (Maybe Int))
-    | Verified Url (WebData Meta)
+    | Verified String (WebData Meta)
     | UpdateUrl String
 
 
@@ -72,7 +71,7 @@ update msg model =
         UpdateUrl url ->
             ( model
             , url
-                |> Url.fromString
+                |> Video.parseId
                 |> Maybe.map
                     (\u -> Meta.get u (Verified u))
                 |> Maybe.withDefault Cmd.none
@@ -81,12 +80,12 @@ update msg model =
         Submitted _ ->
             ( { model | visible = Modal.hidden, submitted = True, video = Nothing }, Cmd.none )
 
-        Verified videoUrl webData ->
+        Verified videoId webData ->
             let
                 video =
                     case webData of
                         RemoteData.Success meta ->
-                            Just (Video Nothing meta.title videoUrl)
+                            Just (Video Nothing meta.title videoId)
 
                         _ ->
                             Nothing
@@ -112,8 +111,7 @@ modal mapper model =
 
         url =
             model.video
-                |> Maybe.map .videoUrl
-                |> Maybe.map Url.toString
+                |> Maybe.map .videoId
                 |> Maybe.withDefault ""
     in
     div []

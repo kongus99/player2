@@ -5,6 +5,8 @@ import com.jooq.generated.tables.records.VideoRecord
 import com.player.dto.Video.fromRecord
 import com.player.dto.Video.fromVideoRecord
 import common.Video
+import common.Video.Parser.metaUrl
+import common.Video.Parser.verifyId
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -40,8 +42,8 @@ class VideoController {
     @PostMapping("/api/video")
     fun createVideo(@RequestBody video: Video): ResponseEntity<Int> {
         return change(video) { id: String? ->
-            dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEO_URL_ID)
-                    ?.values(video.title, id)?.returning()
+            dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL, VIDEO.VIDEO_URL_ID)
+                    ?.values(video.title, "", id)?.returning()
                     ?.fetchOne()
         }
     }
@@ -58,15 +60,14 @@ class VideoController {
     }
 
     private fun change(video: Video, query: (String?) -> VideoRecord?): ResponseEntity<Int> {
-        val id = Video.parseId(video.videoUrl)
-        return if (id != null) {
+        val id = verifyId(video.videoId)
+        return run {
             val result = query(id)?.id ?: -1
             if (result > 0)
                 ok(result)
             else
                 status(HttpStatus.BAD_REQUEST).body(result)
-        } else
-            status(HttpStatus.BAD_REQUEST).body(-1)
+        }
     }
 
 
@@ -78,13 +79,10 @@ class VideoController {
     }
 
     @CrossOrigin
-    @RequestMapping("/api/meta", params = ["url"])
-    fun proxy2(@RequestParam("url") videoUrl: String): ResponseEntity<String> {
+    @RequestMapping("/api/meta", params = ["vid"])
+    fun proxy2(@RequestParam("vid") videoId: String): ResponseEntity<String> {
         // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
-        val id = Video.parseId(videoUrl)
-        return if (id != null) {
-            val url = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$id&format=json"
-            ok(restTemplate?.getForObject(url, String::class.java)!!)
-        } else status(HttpStatus.BAD_REQUEST).body("Incorrect uri")
+        return ok(restTemplate?.getForObject(metaUrl(verifyId(videoId)), String::class.java)!!)
     }
+
 }

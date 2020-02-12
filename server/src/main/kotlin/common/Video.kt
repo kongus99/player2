@@ -1,19 +1,19 @@
 package common
 
-import org.springframework.web.util.UriComponentsBuilder
+import java.lang.IllegalArgumentException
 
-data class Video(val id: Int, val title: String, val videoUrl: String) {
+data class Video(val id: Int, val title: String, val videoId: String) {
     companion object Parser {
+        private val videoIdRegex = Regex("^[\\w-]+$")
 
-        fun parseId(url: String): String? {
-            return try {
-                val videoIds = UriComponentsBuilder.fromUriString(url).build().queryParams["v"]?.toSet() ?: HashSet()
-                if (videoIds.isNotEmpty())
-                    videoIds.first()
-                else null
-            } catch (e: IllegalArgumentException) {
-                null
-            }
+        fun verifyId(videoId: String): String {
+            if (videoIdRegex.matches(videoId))
+                return videoId
+            else throw IllegalArgumentException("Incorrect id $videoId")
+        }
+
+        fun metaUrl(videoId: String): String {
+            return "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$videoId&format=json"
         }
     }
 }
