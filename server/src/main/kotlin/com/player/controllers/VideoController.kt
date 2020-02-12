@@ -42,8 +42,8 @@ class VideoController {
     @PostMapping("/api/video")
     fun createVideo(@RequestBody video: Video): ResponseEntity<Int> {
         return change(video) { id: String? ->
-            dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL, VIDEO.VIDEO_URL_ID)
-                    ?.values(video.title, "", id)?.returning()
+            dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEO_URL_ID)
+                    ?.values(video.title, id)?.returning()
                     ?.fetchOne()
         }
     }
