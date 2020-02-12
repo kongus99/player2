@@ -7,9 +7,9 @@ import org.jooq.Record
 object Video {
 
     fun fromVideoRecord(r: VideoRecord) =
-            common.Video(r.id, r.title, r.videourl)
+            common.Video(r.id, r.title, r.videoUrlId)
 
     fun fromRecord(r: Record) =
-            common.Video(r.get(VIDEO.ID), r.get(VIDEO.TITLE), r.get(VIDEO.VIDEOURL))
+            common.Video(r.get(VIDEO.ID), r.get(VIDEO.TITLE), r.get(VIDEO.VIDEO_URL_ID))
 
 }

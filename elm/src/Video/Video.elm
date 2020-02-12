@@ -1,9 +1,10 @@
-module Video.Video exposing (Video, delete, get, post, put)
+module Video.Video exposing (Video, delete, get, parseId, post, put, toUrl, verify)
 
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, nullable)
+import Json.Decode as Decode exposing (Decoder, int, list, maybe, nullable)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
+import Regex
 import RemoteData exposing (RemoteData(..), WebData)
 import Url exposing (Url)
 
@@ -11,12 +12,40 @@ import Url exposing (Url)
 type alias Video =
     { id : Maybe Int
     , title : String
-    , videoUrl : Url
+    , videoId : String
     }
+
+
+parseId : String -> Maybe String
+parseId videoUrl =
+    Regex.fromString "v=([^&\\s]+)"
+        |> Maybe.andThen
+            (\r ->
+                Regex.find r videoUrl
+                    |> List.map .submatches
+                    |> List.foldl List.append []
+                    |> List.filterMap identity
+                    |> List.head
+            )
+
+
+toUrl : String -> Maybe Url
+toUrl videoId =
+    "https://www.youtube.com/watch?v=" ++ videoId |> Url.fromString
 
 
 url =
     "/api/video"
+
+
+verify : String -> (WebData Video -> msg) -> Cmd msg
+verify videoId msg =
+    Http.get
+        { url = "/api/verify?videoId=" ++ videoId
+        , expect =
+            decode
+                |> Http.expectJson (RemoteData.fromResult >> msg)
+        }
 
 
 get : (WebData (List Video) -> msg) -> Cmd msg
@@ -24,9 +53,7 @@ get msg =
     Http.get
         { url = url
         , expect =
-            list decode
-                |> Decode.map (List.filterMap identity)
-                |> Http.expectJson (RemoteData.fromResult >> msg)
+            list decode |> Http.expectJson (RemoteData.fromResult >> msg)
         }
 
 
@@ -79,17 +106,13 @@ encode video =
     Encode.object
         [ ( "id", Encode.int (Maybe.withDefault -1 video.id) )
         , ( "title", Encode.string video.title )
-        , ( "videoUrl", Encode.string (Url.toString video.videoUrl) )
+        , ( "videoId", Encode.string video.videoId )
         ]
 
 
-decode : Decoder (Maybe Video)
+decode : Decoder Video
 decode =
-    let
-        toVideo id name videoUrl =
-            videoUrl |> Maybe.map (\u -> Video id name u)
-    in
-    Decode.succeed toVideo
-        |> required "id" (Decode.map Just Decode.int)
+    Decode.succeed Video
+        |> required "id" (Decode.maybe Decode.int)
         |> required "title" Decode.string
-        |> required "videoUrl" (Decode.map Url.fromString Decode.string)
+        |> required "videoId" Decode.string

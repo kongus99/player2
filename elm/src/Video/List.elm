@@ -109,7 +109,7 @@ singleVideo selected video =
                 [ Spacing.mb1
                 , attribute "data-toggle" "tooltip"
                 , attribute "data-placement" "bottom"
-                , attribute "title" (Url.toString video.videoUrl)
+                , attribute "title" (video.videoId |> Video.toUrl |> Maybe.map Url.toString |> Maybe.withDefault "Incorrect url")
                 ]
                 [ text video.title ]
             , ButtonGroup.buttonGroup []
@@ -141,7 +141,7 @@ update filter options msg model =
         Select video ->
             ( { model | selected = video }
             , video
-                |> Maybe.map (\v -> Options.encodeWithUrl (Url.toString v.videoUrl) options |> sendUrlWithOptions)
+                |> Maybe.map (\v -> Options.encodeWithUrl v options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
             )
 
