@@ -9,6 +9,7 @@ import common.Video.Parser.metaUrl
 import common.Video.Parser.verifyId
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.json.JacksonJsonParser
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseEntity.ok
@@ -78,11 +79,21 @@ class VideoController {
         return dsl?.deleteFrom(VIDEO)?.where(VIDEO.ID.eq(id))?.returningResult(VIDEO.ID)?.fetchOne()?.component1()
     }
 
+    // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
     @CrossOrigin
-    @RequestMapping("/api/meta", params = ["vid"])
-    fun proxy2(@RequestParam("vid") videoId: String): ResponseEntity<String> {
-        // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
-        return ok(restTemplate?.getForObject(metaUrl(verifyId(videoId)), String::class.java)!!)
+    @RequestMapping("/api/verify", params = ["videoId"])
+    fun verify(@RequestParam("videoId") videoId: String): ResponseEntity<Video> {
+        val verified = verifyId(videoId)
+        return try {
+            ok(dsl?.selectFrom(VIDEO)?.where(VIDEO.VIDEO_URL_ID.eq(verified))?.first()?.map { r -> fromRecord(r) }!!)
+        } catch (e: NoSuchElementException) {
+            val meta = restTemplate?.getForObject(metaUrl(verified), String::class.java)
+            if (meta != null) {
+                val mapped = JacksonJsonParser().parseMap(meta)
+                val title = mapped["title"]?.toString()
+                val author = mapped["author_name"]?.toString()
+                ok(Video(null, title!!, verified))
+            } else status(HttpStatus.BAD_REQUEST).body(null)
+        }
     }
-
 }

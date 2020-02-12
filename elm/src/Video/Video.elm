@@ -1,7 +1,7 @@
-module Video.Video exposing (Video, delete, get, parseId, post, put, toUrl)
+module Video.Video exposing (Video, delete, get, parseId, post, put, toUrl, verify)
 
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, nullable)
+import Json.Decode as Decode exposing (Decoder, int, list, maybe, nullable)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import Regex
@@ -36,6 +36,16 @@ toUrl videoId =
 
 url =
     "/api/video"
+
+
+verify : String -> (WebData Video -> msg) -> Cmd msg
+verify videoId msg =
+    Http.get
+        { url = "/api/verify?videoId=" ++ videoId
+        , expect =
+            decode
+                |> Http.expectJson (RemoteData.fromResult >> msg)
+        }
 
 
 get : (WebData (List Video) -> msg) -> Cmd msg
@@ -103,6 +113,6 @@ encode video =
 decode : Decoder Video
 decode =
     Decode.succeed Video
-        |> required "id" (Decode.map Just Decode.int)
+        |> required "id" (Decode.maybe Decode.int)
         |> required "title" Decode.string
         |> required "videoId" Decode.string

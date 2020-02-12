@@ -11,7 +11,6 @@ import Process
 import RemoteData exposing (WebData)
 import Task
 import Url
-import Video.Meta as Meta exposing (Meta)
 import Video.Video as Video exposing (Video)
 
 
@@ -44,7 +43,7 @@ type Msg
     | Open (Maybe Video)
     | Submit
     | Submitted (WebData (Maybe Int))
-    | Verified String (WebData Meta)
+    | Verified (WebData Video)
     | ChangeUrl String
     | VerifyUrl ()
 
@@ -92,19 +91,19 @@ update msg model =
             ( model
             , model.videoId
                 |> Maybe.map
-                    (\u -> Meta.get u (Verified u))
+                    (\u -> Video.verify u Verified)
                 |> Maybe.withDefault Cmd.none
             )
 
         Submitted _ ->
             ( { model | visible = Modal.hidden, submitted = True, vid = Nothing }, Cmd.none )
 
-        Verified videoId webData ->
+        Verified webData ->
             let
                 video =
                     case webData of
-                        RemoteData.Success meta ->
-                            Just (Video Nothing meta.title videoId)
+                        RemoteData.Success v ->
+                            Just v
 
                         _ ->
                             Nothing

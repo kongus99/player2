@@ -2,7 +2,7 @@ package common
 
 import java.lang.IllegalArgumentException
 
-data class Video(val id: Int, val title: String, val videoId: String) {
+data class Video(val id: Int?, val title: String, val videoId: String) {
     companion object Parser {
         private val videoIdRegex = Regex("^[\\w-]+$")
 
