@@ -68,10 +68,10 @@ update msg model =
                             (\v ->
                                 case v.id of
                                     Nothing ->
-                                        Video.post Submitted v |> Debug.log "POST"
+                                        Video.post Submitted v
 
                                     _ ->
-                                        Video.put Submitted v |> Debug.log "PUT"
+                                        Video.put Submitted v
                             )
                         |> Maybe.withDefault Cmd.none
             in
