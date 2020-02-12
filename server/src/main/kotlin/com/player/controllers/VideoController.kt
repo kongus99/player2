@@ -1,11 +1,16 @@
 package com.player.controllers
 
 import com.jooq.generated.tables.Video.VIDEO
+import com.jooq.generated.tables.records.VideoRecord
 import com.player.dto.Video.fromRecord
 import com.player.dto.Video.fromVideoRecord
 import common.Video
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.http.ResponseEntity.ok
+import org.springframework.http.ResponseEntity.status
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.client.RestTemplate
@@ -33,22 +38,37 @@ class VideoController {
     @CrossOrigin
     @Transactional
     @PostMapping("/api/video")
-    fun createVideo(@RequestBody video: Video): Int? {
-        return dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEOURL)
-                ?.values(video.title, video.videoUrl)?.returning()
-                ?.fetchOptional()?.map { r -> r.id }?.orElse(null)
+    fun createVideo(@RequestBody video: Video): ResponseEntity<Int> {
+        return change(video) { id: String? ->
+            dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEO_URL_ID)
+                    ?.values(video.title, id)?.returning()
+                    ?.fetchOne()
+        }
     }
 
     @CrossOrigin
     @Transactional
     @PutMapping("/api/video")
-    fun editVideo(@RequestBody video: Video): Int? {
-        return dsl?.update(VIDEO)
-                ?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEOURL, video.videoUrl)
-                ?.where(VIDEO.ID.eq(video.id))
-                ?.returning()
-                ?.fetchOptional()?.map { r -> r.id }?.orElse(null)
+    fun editVideo(@RequestBody video: Video): ResponseEntity<Int> {
+        return change(video) { id: String? ->
+            dsl?.update(VIDEO)?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEO_URL_ID, id)?.where(VIDEO.ID.eq(video.id))
+                    ?.returning()
+                    ?.fetchOne()
+        }
     }
+
+    private fun change(video: Video, query: (String?) -> VideoRecord?): ResponseEntity<Int> {
+        val id = Video.parseId(video.videoUrl)
+        return if (id != null) {
+            val result = query(id)?.id ?: -1
+            if (result > 0)
+                ok(result)
+            else
+                status(HttpStatus.BAD_REQUEST).body(result)
+        } else
+            status(HttpStatus.BAD_REQUEST).body(-1)
+    }
+
 
     @CrossOrigin
     @Transactional
@@ -59,9 +79,12 @@ class VideoController {
 
     @CrossOrigin
     @RequestMapping("/api/meta", params = ["url"])
-    fun proxy2(@RequestParam("url") videoUrl: String): String {
+    fun proxy2(@RequestParam("url") videoUrl: String): ResponseEntity<String> {
         // https://www.youtube.com/get_video_info?video_id=B4CRkpBGQzU
-        val url = "https://www.youtube.com/oembed?url=$videoUrl&format=json"
-        return restTemplate?.getForObject(url, String::class.java)!!
+        val id = Video.parseId(videoUrl)
+        return if (id != null) {
+            val url = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$id&format=json"
+            ok(restTemplate?.getForObject(url, String::class.java)!!)
+        } else status(HttpStatus.BAD_REQUEST).body("Incorrect uri")
     }
 }
