@@ -39,7 +39,6 @@ parse text =
                         Ignore
                 )
             |> TextFilter text
-        --|> Debug.log "filters"
 
     else
         TextFilter text []
