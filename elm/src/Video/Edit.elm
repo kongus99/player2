@@ -15,11 +15,11 @@ import Video.Video as Video exposing (Video)
 
 
 type alias Model =
-    { visible : Modal.Visibility, submitted : Bool, url : String, videoId : Maybe String, vid : Maybe Video }
+    { visible : Modal.Visibility, submitted : Bool, url : String, videoId : Maybe String, video : Maybe Video }
 
 
 init =
-    { visible = Modal.hidden, submitted = False, url = "", videoId = Nothing, vid = Nothing }
+    { visible = Modal.hidden, submitted = False, url = "", videoId = Nothing, video = Nothing }
 
 
 resetSubmitted model =
@@ -63,7 +63,7 @@ update msg model =
         Submit ->
             let
                 cmd =
-                    model.vid
+                    model.video
                         |> Maybe.map
                             (\v ->
                                 case v.id of
@@ -82,7 +82,7 @@ update msg model =
                 parsed =
                     Video.parseId url
             in
-            ( { model | url = url, videoId = parsed, vid = Maybe.andThen (\_ -> model.vid) parsed }
+            ( { model | url = url, videoId = parsed, video = Maybe.andThen (\_ -> model.video) parsed }
             , Process.sleep 1000 |> Task.perform VerifyUrl
             )
 
@@ -95,7 +95,7 @@ update msg model =
             )
 
         Submitted _ ->
-            ( { model | visible = Modal.hidden, submitted = True, vid = Nothing }, Cmd.none )
+            ( { model | visible = Modal.hidden, submitted = True, video = Nothing }, Cmd.none )
 
         Verified webData ->
             let
@@ -107,7 +107,7 @@ update msg model =
                         _ ->
                             Nothing
             in
-            ( { model | vid = video }, Cmd.none )
+            ( { model | video = video }, Cmd.none )
 
 
 addButton : (Msg -> a) -> Html a
@@ -127,7 +127,7 @@ validation model =
     else if not <| isJust model.videoId then
         ( Input.attrs [], Input.danger, Form.invalidFeedback [] [ text <| "No video id found in " ++ model.url ] )
 
-    else if not <| isJust model.vid then
+    else if not <| isJust model.video then
         ( Input.danger, Input.danger, Form.invalidFeedback [] [ text <| "Incorrect video id " ++ Maybe.withDefault "" model.videoId ] )
 
     else
@@ -138,7 +138,7 @@ modal : (Msg -> msg) -> Model -> Html msg
 modal mapper model =
     let
         name =
-            model.vid |> Maybe.map .title |> Maybe.withDefault ""
+            model.video |> Maybe.map .title |> Maybe.withDefault ""
 
         ( upperStatus, lowerStatus, lowerFeedback ) =
             validation model
@@ -173,7 +173,7 @@ modal mapper model =
                     ]
                 ]
             |> Modal.footer []
-                (if Extra.isJust model.vid then
+                (if Extra.isJust model.video then
                     [ Button.submitButton
                         [ Button.primary
                         , Button.onClick Submit
