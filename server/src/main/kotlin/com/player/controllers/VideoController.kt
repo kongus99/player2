@@ -26,6 +26,11 @@ class VideoController {
     @Autowired
     private val dsl: DSLContext? = null
 
+    @GetMapping("/api/public")
+    fun getMessage(): String {
+        return "Hello from public API controller"
+    }
+
     @CrossOrigin
     @GetMapping("/api/video")
     fun videos(): List<Video>? {
