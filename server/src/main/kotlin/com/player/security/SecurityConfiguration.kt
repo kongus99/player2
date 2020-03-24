@@ -1,8 +1,7 @@
 package com.player.security
 
-import com.player.security.JwtAuthenticationFilter
-import com.player.security.JwtAuthorizationFilter
 import org.springframework.context.annotation.Bean
+import org.springframework.http.HttpMethod.GET
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -21,10 +20,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 class SecurityConfiguration : WebSecurityConfigurerAdapter() {
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
-        http.cors().and()
-                .csrf().disable()
+        http.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/api/public").permitAll()
+                .antMatchers(GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(JwtAuthenticationFilter(authenticationManager()))

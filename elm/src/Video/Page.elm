@@ -9,6 +9,7 @@ import Json.Encode as Encode
 import TextFilter exposing (TextFilter)
 import Video.Edit as Edit exposing (resetSubmitted)
 import Video.List as List exposing (Msg(..))
+import Video.Login as Login
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video
 
@@ -18,6 +19,7 @@ port sendOptions : Encode.Value -> Cmd msg
 
 type alias Model =
     { add : Edit.Model
+    , login : Login.Model
     , list : List.Model
     , navbar : Navbar.State
     , options : Options
@@ -29,6 +31,7 @@ type Msg
     = Toggle Option
     | Filter String
     | Add Edit.Msg
+    | Login Login.Msg
     | ListMsg List.Msg
     | NavbarMsg Navbar.State
 
@@ -42,6 +45,7 @@ init _ =
             Navbar.initialState NavbarMsg
     in
     ( { add = Edit.init
+      , login = Login.init
       , list = list
       , navbar = navbar
       , options = Options.init
@@ -109,6 +113,13 @@ update msg model =
             else
                 ( { model | add = newModel }, Cmd.map Add cmd )
 
+        Login m ->
+            let
+                ( newModel, cmd ) =
+                    Login.update m model.login
+            in
+            ( { model | login = newModel }, Cmd.map Login cmd )
+
 
 view model =
     Grid.containerFluid []
@@ -134,6 +145,8 @@ navbarView model =
             ]
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
+            , Navbar.customItem <| Login.modal Login model.login
+            , Navbar.customItem <| Login.loginButton Login
             , Navbar.customItem <| Edit.modal Add model.add
             , Navbar.customItem <| Edit.addButton Add
             ]
