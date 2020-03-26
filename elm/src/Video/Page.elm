@@ -3,7 +3,7 @@ port module Video.Page exposing (..)
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
-import Html exposing (Html, text)
+import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
 import TextFilter exposing (TextFilter)
@@ -127,7 +127,7 @@ view model =
             [ Grid.col [] [ navbarView model ]
             ]
         , Grid.row [ Row.centerLg, Row.attrs [ class "jumbotron jumbotron-fluid" ] ]
-            [ Grid.col [] [ List.view model.list |> Html.map ListMsg ]
+            [ Grid.col [] [ model.list |> List.view model.login |> Html.map ListMsg ]
             ]
         ]
 
@@ -146,8 +146,8 @@ navbarView model =
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
             , Navbar.customItem <| Login.modal Login model.login
-            , Navbar.customItem <| Login.loginButton Login
+            , Navbar.customItem <| Login.loginButton Login model.login
             , Navbar.customItem <| Edit.modal Add model.add
-            , Navbar.customItem <| Edit.addButton Add
+            , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login
             ]
         |> Navbar.view model.navbar

@@ -24,41 +24,43 @@ class JwtAuthorizationFilter(authenticationManager: AuthenticationManager?) : Ba
         filterChain.doFilter(request, response)
     }
 
-    private fun getAuthentication(request: HttpServletRequest): UsernamePasswordAuthenticationToken? {
-        request.cookies?.find { it.name == SecurityConstants.TOKEN_HEADER }?.let { cookie ->
-            if (cookie.value.isNotEmpty() && cookie.value.startsWith(SecurityConstants.TOKEN_PREFIX)) {
-                try {
-                    val parsedToken = parse(cookie.value)
-                    val username = parsedToken.body.subject
-                    if (username != null && username.isNotEmpty()) {
-                        val authorities = (parsedToken.body["rol"] as List<*>)
-                                .map { SimpleGrantedAuthority(it as String?)}
-                        return UsernamePasswordAuthenticationToken(username, null, authorities)
+    companion object {
+        fun getAuthentication(request: HttpServletRequest): UsernamePasswordAuthenticationToken? {
+            request.cookies?.find { it.name == SecurityConstants.TOKEN_HEADER }?.let { cookie ->
+                if (cookie.value.isNotEmpty() && cookie.value.startsWith(SecurityConstants.TOKEN_PREFIX)) {
+                    try {
+                        val parsedToken = parse(cookie.value)
+                        val username = parsedToken.body.subject
+                        val seq = parsedToken.body[JwtAuthenticationFilter.SEQ] as Int
+                        if (isValid(username, { it!!.isNotEmpty() }) && isValid(seq, { JwtAuthenticationFilter.isValidToken(username, it!!) })) {
+                            val authorities = (parsedToken.body["rol"] as List<*>)
+                                    .map { SimpleGrantedAuthority(it as String?) }
+                            return UsernamePasswordAuthenticationToken(username, null, authorities)
+                        }
+                    } catch (exception: ExpiredJwtException) {
+                        log.warn("Request to parse expired JWT : {} failed : {}", cookie, exception.message)
+                    } catch (exception: UnsupportedJwtException) {
+                        log.warn("Request to parse unsupported JWT : {} failed : {}", cookie, exception.message)
+                    } catch (exception: MalformedJwtException) {
+                        log.warn("Request to parse invalid JWT : {} failed : {}", cookie, exception.message)
+                    } catch (exception: SignatureException) {
+                        log.warn("Request to parse JWT with invalid signature : {} failed : {}", cookie, exception.message)
+                    } catch (exception: IllegalArgumentException) {
+                        log.warn("Request to parse empty or null JWT : {} failed : {}", cookie, exception.message)
                     }
-                } catch (exception: ExpiredJwtException) {
-                    log.warn("Request to parse expired JWT : {} failed : {}", cookie, exception.message)
-                } catch (exception: UnsupportedJwtException) {
-                    log.warn("Request to parse unsupported JWT : {} failed : {}", cookie, exception.message)
-                } catch (exception: MalformedJwtException) {
-                    log.warn("Request to parse invalid JWT : {} failed : {}", cookie, exception.message)
-                } catch (exception: SignatureException) {
-                    log.warn("Request to parse JWT with invalid signature : {} failed : {}", cookie, exception.message)
-                } catch (exception: IllegalArgumentException) {
-                    log.warn("Request to parse empty or null JWT : {} failed : {}", cookie, exception.message)
                 }
             }
+            return null
         }
-        return null
-    }
 
-    private fun parse(token: String): Jws<Claims> {
-        return Jwts.parserBuilder()
-                .setSigningKey(SecurityConstants.JWT_SECRET.toByteArray())
-                .build()
-                .parseClaimsJws(token.replace(SecurityConstants.TOKEN_PREFIX, ""))
-    }
+        private fun <T> isValid(field: T?, validator: (T?) -> Boolean) = field != null && validator(field)
+        private fun parse(token: String): Jws<Claims> {
+            return Jwts.parserBuilder()
+                    .setSigningKey(SecurityConstants.JWT_SECRET.toByteArray())
+                    .build()
+                    .parseClaimsJws(token.replace(SecurityConstants.TOKEN_PREFIX, ""))
+        }
 
-    companion object {
         private val log = LoggerFactory.getLogger(JwtAuthorizationFilter::class.java)
     }
 }

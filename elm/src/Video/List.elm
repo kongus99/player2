@@ -16,6 +16,7 @@ import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
+import Video.Login as Login
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video exposing (Video)
 
@@ -39,11 +40,11 @@ type alias Model =
     }
 
 
-view : Model -> Html Msg
-view model =
+view : Login.Model -> Model -> Html Msg
+view login model =
     div []
         [ Edit.modal Edit model.edit
-        , ListGroup.custom (List.map (singleVideo model.selected) model.filteredVideos)
+        , ListGroup.custom (List.map (singleVideo model.selected login) model.filteredVideos)
         ]
 
 
@@ -86,8 +87,8 @@ resolveFetch response default =
             default
 
 
-singleVideo : Maybe Video -> Video -> ListGroup.CustomItem Msg
-singleVideo selected video =
+singleVideo : Maybe Video -> Login.Model -> Video -> ListGroup.CustomItem Msg
+singleVideo selected login video =
     let
         defaultAttributes =
             [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select (Just video)) ] ]
@@ -112,10 +113,13 @@ singleVideo selected video =
                 , attribute "title" (video.videoId |> Video.toUrl |> Maybe.map Url.toString |> Maybe.withDefault "Incorrect url")
                 ]
                 [ text video.title ]
-            , ButtonGroup.buttonGroup []
-                [ Edit.editButton video Edit
-                , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
-                ]
+            , Login.restrictHtml
+                (ButtonGroup.buttonGroup []
+                    [ Edit.editButton video Edit
+                    , ButtonGroup.button [ Button.danger, Button.small, Button.onClick (Delete video) ] [ text "X" ]
+                    ]
+                )
+                login
             ]
         ]
 

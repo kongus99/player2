@@ -21,11 +21,19 @@ import org.springframework.web.client.RestTemplate
 
 @RestController
 class VideoController {
+    data class User(val name: String)
+
     @Autowired
     private val restTemplate: RestTemplate? = null
 
     @Autowired
     private val dsl: DSLContext? = null
+
+    @CrossOrigin
+    @GetMapping("/api/user")
+    fun user(): User? {
+        return User("user")
+    }
 
     @CrossOrigin
     @GetMapping("/api/video")
