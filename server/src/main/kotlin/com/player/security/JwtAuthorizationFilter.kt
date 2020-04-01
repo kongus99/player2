@@ -1,5 +1,7 @@
 package com.player.security
 
+import com.player.security.SecurityConstants.Companion.ROLE
+import com.player.security.SecurityConstants.Companion.SEQ
 import io.jsonwebtoken.*
 import io.jsonwebtoken.security.SignatureException
 import org.slf4j.LoggerFactory
@@ -31,9 +33,9 @@ class JwtAuthorizationFilter(authenticationManager: AuthenticationManager?) : Ba
                     try {
                         val parsedToken = parse(cookie.value)
                         val username = parsedToken.body.subject
-                        val seq = parsedToken.body[JwtAuthenticationFilter.SEQ] as Int
+                        val seq = parsedToken.body[SEQ] as Int
                         if (isValid(username, { it!!.isNotEmpty() }) && isValid(seq, { JwtAuthenticationFilter.isValidToken(username, it!!) })) {
-                            val authorities = (parsedToken.body["rol"] as List<*>)
+                            val authorities = (parsedToken.body[ROLE] as List<*>)
                                     .map { SimpleGrantedAuthority(it as String?) }
                             return UsernamePasswordAuthenticationToken(username, null, authorities)
                         }

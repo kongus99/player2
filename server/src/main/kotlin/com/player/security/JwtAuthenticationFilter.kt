@@ -1,9 +1,16 @@
 package com.player.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.player.security.SecurityConstants.Companion.JWT_SECRET
+import com.player.security.SecurityConstants.Companion.ROLE
+import com.player.security.SecurityConstants.Companion.SEQ
+import com.player.security.SecurityConstants.Companion.TOKEN_AUDIENCE
 import com.player.security.SecurityConstants.Companion.TOKEN_EXPIRATION
 import com.player.security.SecurityConstants.Companion.TOKEN_HEADER
+import com.player.security.SecurityConstants.Companion.TOKEN_ISSUER
 import com.player.security.SecurityConstants.Companion.TOKEN_PREFIX
+import com.player.security.SecurityConstants.Companion.TOKEN_TYPE
+import com.player.security.SecurityConstants.Companion.TYPE
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
@@ -21,11 +28,13 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JwtAuthenticationFilter(private val authentication: AuthenticationManager) : UsernamePasswordAuthenticationFilter() {
-    companion object JwtAuthenticationFilter {
-        const val SEQ = "seq"
+class JwtAuthenticationFilter(private val authentication: AuthenticationManager, private val secureCookie: Boolean) : UsernamePasswordAuthenticationFilter() {
 
-        var validTokens = mutableMapOf<String, Int>().withDefault { 0 }
+
+    companion object JwtAuthenticationFilter {
+
+
+        private var validTokens = mutableMapOf<String, Int>().withDefault { 0 }
 
         fun isValidToken(username: String, token: Int): Boolean {
             return validTokens.getValue(username) == token
@@ -56,20 +65,22 @@ class JwtAuthenticationFilter(private val authentication: AuthenticationManager)
         val user = authentication.principal as User
         val seq = getToken(user.username)
         val roles = user.authorities.map { obj: GrantedAuthority -> obj.authority }
-        val signingKey = SecurityConstants.JWT_SECRET.toByteArray()
+        val signingKey = JWT_SECRET.toByteArray()
         val token = Jwts.builder()
                 .signWith(Keys.hmacShaKeyFor(signingKey), SignatureAlgorithm.HS512)
-                .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
-                .setIssuer(SecurityConstants.TOKEN_ISSUER)
-                .setAudience(SecurityConstants.TOKEN_AUDIENCE)
+                .setHeaderParam(TYPE, TOKEN_TYPE)
+                .setIssuer(TOKEN_ISSUER)
+                .setAudience(TOKEN_AUDIENCE)
                 .setSubject(user.username)
                 .setExpiration(Date(Instant.now().plus(TOKEN_EXPIRATION).toEpochMilli()))
-                .claim("rol", roles)
+                .claim(ROLE, roles)
                 .claim(SEQ, seq)
                 .compact()
         val cookie = Cookie(TOKEN_HEADER, TOKEN_PREFIX + token)
         cookie.path = "/"
         cookie.maxAge = TOKEN_EXPIRATION.seconds.toInt()
+        cookie.isHttpOnly = true
+        cookie.secure = secureCookie
         response.addCookie(cookie)
     }
 

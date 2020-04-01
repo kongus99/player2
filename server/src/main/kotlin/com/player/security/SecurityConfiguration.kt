@@ -1,6 +1,9 @@
 package com.player.security
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
+import org.springframework.core.env.Environment
+import org.springframework.core.env.get
 import org.springframework.http.HttpMethod.GET
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
@@ -19,20 +22,27 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(securedEnabled = true)
 class SecurityConfiguration : WebSecurityConfigurerAdapter() {
+    @Autowired
+    private val env: Environment? = null
+
+
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
+        val secureCookie = env?.get("cookie.secure")?.toBoolean() ?: false
+        //fix for JWT
         http.csrf().disable()
-                .authorizeRequests()
+        //paths
+        http.authorizeRequests()
                 .antMatchers(GET, "/api/user/**").authenticated()
                 .antMatchers(GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
-                .and()
-                .addFilter(JwtAuthenticationFilter(authenticationManager()))
+        //filters
+        http.addFilter(JwtAuthenticationFilter(authenticationManager(), secureCookie))
                 .addFilter(JwtAuthorizationFilter(authenticationManager()))
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .logout()
+        //session
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        //log out
+        http.logout()
                 .permitAll(false)
                 .logoutRequestMatcher(AntPathRequestMatcher("/api/logout", "POST"))
                 .logoutSuccessHandler { req, _, _ ->

@@ -7,6 +7,7 @@ import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
 import TextFilter exposing (TextFilter)
+import Video.Alert as Alert
 import Video.Edit as Edit exposing (resetSubmitted)
 import Video.List as List exposing (Msg(..))
 import Video.Login as Login
@@ -31,7 +32,7 @@ type Msg
     = Toggle Option
     | Filter String
     | Add Edit.Msg
-    | Login Login.Msg
+    | LoginMsg Login.Msg
     | ListMsg List.Msg
     | NavbarMsg Navbar.State
 
@@ -51,7 +52,14 @@ init _ =
       , options = Options.init
       , filter = TextFilter.empty
       }
-    , Cmd.batch [ Cmd.map ListMsg listCmd, navbarCmd ]
+    , Cmd.batch
+        [ Cmd.map ListMsg listCmd
+        , Cmd.map LoginMsg
+            (Login.fetchUser <|
+                Alert.Warning "Please log in to unlock more features."
+            )
+        , navbarCmd
+        ]
     )
 
 
@@ -113,12 +121,12 @@ update msg model =
             else
                 ( { model | add = newModel }, Cmd.map Add cmd )
 
-        Login m ->
+        LoginMsg m ->
             let
                 ( newModel, cmd ) =
                     Login.update m model.login
             in
-            ( { model | login = newModel }, Cmd.map Login cmd )
+            ( { model | login = newModel }, Cmd.map LoginMsg cmd )
 
 
 view model =
@@ -145,8 +153,8 @@ navbarView model =
             ]
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
-            , Navbar.customItem <| Login.modal Login model.login
-            , Navbar.customItem <| Login.loginButton Login model.login
+            , Navbar.customItem <| Login.modal LoginMsg model.login
+            , Navbar.customItem <| Login.loginButton LoginMsg model.login
             , Navbar.customItem <| Edit.modal Add model.add
             , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login
             ]

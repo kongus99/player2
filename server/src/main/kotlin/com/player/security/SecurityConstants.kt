@@ -16,6 +16,9 @@ class SecurityConstants private constructor() {
         const val TOKEN_TYPE = "JWT"
         const val TOKEN_ISSUER = "secure-api"
         const val TOKEN_AUDIENCE = "secure-app"
+        const val ROLE = "rol"
+        const val TYPE = "typ"
+        const val SEQ = "seq"
         val TOKEN_EXPIRATION: Duration = Duration.ofDays(30)
     }
 

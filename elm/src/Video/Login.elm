@@ -61,11 +61,11 @@ authenticate model =
         }
 
 
-fetchUser : Cmd Msg
-fetchUser =
+fetchUser : Alert.Msg -> Cmd Msg
+fetchUser failMessage =
     Http.get
         { url = "/api/user"
-        , expect = Http.expectString (RemoteData.fromResult >> UserFetched)
+        , expect = Http.expectString (RemoteData.fromResult >> UserFetched failMessage)
         }
 
 
@@ -91,7 +91,7 @@ restrictHtml =
 type Msg
     = Authenticate
     | Authenticated (WebData String)
-    | UserFetched (WebData String)
+    | UserFetched Alert.Msg (WebData String)
     | Open
     | Close
     | EditPassword String
@@ -161,18 +161,18 @@ update msg model =
                         ( m, c ) =
                             showFeedback <| Alert.Success "Logged in."
                     in
-                    ( m, Cmd.batch [ c, fetchUser ] )
+                    ( m, Cmd.batch [ c, fetchUser <| Alert.Danger "Cannot retrieve user data." ] )
 
                 _ ->
                     ( model, Cmd.none )
 
-        UserFetched response ->
+        UserFetched failMessage response ->
             case response of
                 RemoteData.Success s ->
                     { model | user = Decode.decodeString userDecoder s |> Result.toMaybe } |> update Close
 
                 _ ->
-                    showFeedback <| Alert.Danger "Cannot retrieve user data."
+                    showFeedback failMessage
 
         AlertMsg m ->
             ( { model | alert = Alert.update m model.alert }, Cmd.none )
