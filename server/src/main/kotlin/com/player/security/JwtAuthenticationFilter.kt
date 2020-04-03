@@ -11,6 +11,7 @@ import com.player.security.SecurityConstants.Companion.TOKEN_ISSUER
 import com.player.security.SecurityConstants.Companion.TOKEN_PREFIX
 import com.player.security.SecurityConstants.Companion.TOKEN_TYPE
 import com.player.security.SecurityConstants.Companion.TYPE
+import com.player.security.UserService.MyUserPrincipal
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
@@ -18,7 +19,6 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.userdetails.User
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import java.time.Instant
 import java.util.*
@@ -62,7 +62,7 @@ class JwtAuthenticationFilter(private val authentication: AuthenticationManager,
 
     override fun successfulAuthentication(request: HttpServletRequest, response: HttpServletResponse,
                                           filterChain: FilterChain, authentication: Authentication) {
-        val user = authentication.principal as User
+        val user = authentication.principal as MyUserPrincipal
         val seq = getToken(user.username)
         val roles = user.authorities.map { obj: GrantedAuthority -> obj.authority }
         val signingKey = JWT_SECRET.toByteArray()

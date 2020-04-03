@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.core.env.Environment
 import org.springframework.core.env.get
 import org.springframework.http.HttpMethod.GET
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+import org.springframework.http.HttpMethod.POST
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -33,7 +33,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
         http.csrf().disable()
         //paths
         http.authorizeRequests()
-                .antMatchers(GET, "/api/user/**").authenticated()
+                .antMatchers(GET, "/api/user").authenticated()
+                .antMatchers(POST, "/api/user").permitAll()
                 .antMatchers(GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
         //filters
@@ -51,14 +52,6 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
                 }
                 .deleteCookies(SecurityConstants.TOKEN_HEADER)
                 .clearAuthentication(true)
-    }
-
-    @Throws(Exception::class)
-    public override fun configure(auth: AuthenticationManagerBuilder) {
-        auth.inMemoryAuthentication()
-                .withUser("user")
-                .password(passwordEncoder().encode("password"))
-                .authorities("ROLE_USER")
     }
 
     @Bean

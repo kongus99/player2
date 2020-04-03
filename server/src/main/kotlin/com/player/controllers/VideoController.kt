@@ -21,19 +21,12 @@ import org.springframework.web.client.RestTemplate
 
 @RestController
 class VideoController {
-    data class User(val name: String)
 
     @Autowired
     private val restTemplate: RestTemplate? = null
 
     @Autowired
     private val dsl: DSLContext? = null
-
-    @CrossOrigin
-    @GetMapping("/api/user")
-    fun user(): User? {
-        return User("user")
-    }
 
     @CrossOrigin
     @GetMapping("/api/video")
@@ -98,7 +91,7 @@ class VideoController {
             if (meta != null) {
                 val mapped = JacksonJsonParser().parseMap(meta)
                 val title = mapped["title"]?.toString()
-                val author = mapped["author_name"]?.toString()
+//                val author = mapped["author_name"]?.toString()
                 ok(Video(null, title!!, verified))
             } else status(HttpStatus.BAD_REQUEST).body(null)
         }
