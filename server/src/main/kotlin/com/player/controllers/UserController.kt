@@ -24,7 +24,7 @@ class UserController {
     fun get(principal: Principal): UserData? {
         return dsl?.selectFrom(USER)
                 ?.where(USER.NAME.eq(principal.name))
-                ?.first()
+                ?.firstOrNull()
                 ?.let { fromRecord(it) }
     }
 
@@ -37,5 +37,6 @@ class UserController {
                 ?.returning()
                 ?.fetchOne()
                 ?.let { fromRecord(it) }
+
     }
 }

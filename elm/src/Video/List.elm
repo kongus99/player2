@@ -12,11 +12,11 @@ import Html.Attributes exposing (attribute, href)
 import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
+import Login.Login as Login
 import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
 import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
-import Video.Login as Login
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video exposing (Video)
 

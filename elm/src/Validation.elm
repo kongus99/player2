@@ -1,8 +1,8 @@
-module Video.Validation exposing (..)
+module Validation exposing (..)
 
-import Bootstrap.Button as Button
 import Bootstrap.Form as Form
 import Bootstrap.Form.Input as Input
+import Dict
 import Html exposing (div, text)
 
 
@@ -54,16 +54,3 @@ isInvalid validation =
 
         _ ->
             True
-
-
-forSubmit : a -> String -> List Validation -> Html.Html a
-forSubmit msg title validations =
-    if List.any isInvalid validations then
-        div [] []
-
-    else
-        Button.submitButton
-            [ Button.primary
-            , Button.onClick msg
-            ]
-            [ text title ]

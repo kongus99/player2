@@ -1,16 +1,17 @@
 port module Video.Page exposing (..)
 
+import Alert as Alert
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
+import Login.Login as Login exposing (Msg(..))
+import Login.User as User
 import TextFilter exposing (TextFilter)
-import Video.Alert as Alert
 import Video.Edit as Edit exposing (resetSubmitted)
 import Video.List as List exposing (Msg(..))
-import Video.Login as Login
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video
 
@@ -55,8 +56,10 @@ init _ =
     , Cmd.batch
         [ Cmd.map ListMsg listCmd
         , Cmd.map LoginMsg
-            (Login.fetchUser <|
-                Alert.Warning "Please log in to unlock more features."
+            (User.getData <|
+                UserFetched <|
+                    Alert.Warning
+                        "Please log in to unlock more features."
             )
         , navbarCmd
         ]
@@ -153,7 +156,7 @@ navbarView model =
             ]
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
-            , Navbar.customItem <| Login.modal LoginMsg model.login
+            , Navbar.customItem <| Login.view LoginMsg model.login
             , Navbar.customItem <| Login.loginButton LoginMsg model.login
             , Navbar.customItem <| Edit.modal Add model.add
             , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login

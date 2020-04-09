@@ -11,7 +11,7 @@ import Process
 import RemoteData exposing (WebData)
 import Task
 import Url
-import Video.Validation exposing (Validation(..), feedback, status)
+import Validation exposing (Validation(..), feedback, status)
 import Video.Video as Video exposing (Video)
 
 

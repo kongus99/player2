@@ -1,4 +1,4 @@
-module Video.Alert exposing (..)
+module Alert exposing (..)
 
 import Bootstrap.Alert as Alert
 import Html exposing (Html, text)
