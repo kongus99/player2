@@ -62,7 +62,7 @@ update msg model =
             ( model
             , case model.user of
                 Creation u ->
-                    Cmd.none
+                    submit u Authenticated
 
                 LoggingIn fields ->
                     submit fields Authenticated

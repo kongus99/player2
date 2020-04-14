@@ -132,7 +132,7 @@ validate model =
         ( Invalid "", Invalid ("Incorrect video id " ++ Maybe.withDefault "" model.videoId) )
 
     else
-        ( Valid "", Valid ("Video found for id " ++ Maybe.withDefault "" model.videoId) )
+        ( Valid, Valid )
 
 
 modal : (Msg -> msg) -> Model -> Html msg

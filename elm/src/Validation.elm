@@ -8,7 +8,7 @@ import Html exposing (div, text)
 
 type Validation
     = Indeterminate
-    | Valid String
+    | Valid
     | Invalid String
 
 
@@ -18,7 +18,7 @@ status validation =
         Indeterminate ->
             Input.attrs []
 
-        Valid _ ->
+        Valid ->
             Input.success
 
         Invalid _ ->
@@ -39,18 +39,30 @@ feedback validation =
         Indeterminate ->
             div [] []
 
-        Valid t ->
-            formFeed t Form.validFeedback
+        Valid ->
+            formFeed "" Form.validFeedback
 
         Invalid t ->
             formFeed t Form.invalidFeedback
 
 
-isInvalid : Validation -> Bool
-isInvalid validation =
-    case validation of
-        Valid _ ->
-            False
+reduce : List Validation -> Validation
+reduce validations =
+    validations
+        |> List.foldl
+            (\val ->
+                \acc ->
+                    case ( val, acc ) of
+                        ( _, Invalid _ ) ->
+                            acc
 
-        _ ->
-            True
+                        ( Invalid _, _ ) ->
+                            val
+
+                        ( Indeterminate, _ ) ->
+                            val
+
+                        ( Valid, _ ) ->
+                            acc
+            )
+            Valid

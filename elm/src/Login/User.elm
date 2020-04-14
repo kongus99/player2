@@ -4,10 +4,12 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
-import Login.Form as Form exposing (Form, emptyInput, emptyPassword)
+import Login.Form as Form exposing (Field, Form, Type(..), emptyInput)
 import Regex
 import RemoteData exposing (WebData)
+import Set
 import Validation exposing (Validation(..))
+import Validator exposing (Validator, email, emptyString, password, username, validator)
 
 
 
@@ -29,20 +31,21 @@ userCreation =
     Creation
         { fields =
             [ ( "username"
-              , emptyInput "Username" validateUsername
+              , emptyInput Input [ validator username "username" .value ] "Username"
               )
             , ( "email"
-              , emptyInput "Email" validateEmail
+              , emptyInput Input [ validator email "email" .value ] "Email"
               )
             , ( "password"
-              , emptyPassword "Password"
+              , emptyInput Password [ validator password "password" .value ] "Password"
               )
             , ( "passwordRepeated"
-              , emptyPassword "Repeat password"
+              , emptyInput Password [ validatePasswordsMatch ] "Repeat password"
               )
             ]
-        , validators = []
-        , url = "/api/authenticate"
+                |> Dict.fromList
+        , order = [ "username", "email", "password", "passwordRepeated" ]
+        , url = "/api/user"
         }
 
 
@@ -51,13 +54,14 @@ userVerification =
     LoggingIn
         { fields =
             [ ( "username"
-              , emptyInput "Username" validateUsername
+              , emptyInput Input [ validator username "username" .value ] "Username"
               )
             , ( "password"
-              , emptyPassword "Password"
+              , emptyInput Password [ validator emptyString "password" .value ] "Password"
               )
             ]
-        , validators = []
+                |> Dict.fromList
+        , order = [ "username", "password" ]
         , url = "/api/authenticate"
         }
 
@@ -78,44 +82,28 @@ userLoggedIn string =
 --validation
 
 
-regexpValidator : String -> (String -> String) -> String -> Validation
-regexpValidator regexpString errorMessage tested =
-    let
-        regexp =
-            Regex.fromString regexpString |> Maybe.withDefault Regex.never
+validatePasswordsMatch : Validator Field
+validatePasswordsMatch toCheck =
+    Maybe.map2
+        (\f1 ->
+            \f2 ->
+                case ( f1.value, f2.value ) of
+                    ( "", _ ) ->
+                        Indeterminate
 
-        isValid user =
-            Regex.find regexp user |> List.isEmpty |> not
-    in
-    if (String.trim tested |> String.length) < 3 then
-        Indeterminate
+                    ( _, "" ) ->
+                        Indeterminate
 
-    else if isValid tested then
-        Valid ""
+                    ( x, y ) ->
+                        if x == y then
+                            Valid
 
-    else
-        Invalid (errorMessage tested)
-
-
-validateUsername : String -> Validation
-validateUsername =
-    regexpValidator
-        "^[a-z0-9_-]{3,15}$"
-        (\t -> "Incorrect username " ++ t)
-
-
-validateEmail : String -> Validation
-validateEmail =
-    regexpValidator
-        "^(([^<>()\\[\\]\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\.,;:\\s@\"]+)*)|(\".+\"))@(([^<>()[\\]\\.,;:\\s@\"]+\\.)+[^<>()[\\]\\.,;:\\s@\"]{2,})$"
-        (\t -> "Incorrect email " ++ t)
-
-
-validatePassword : String -> Validation
-validatePassword =
-    regexpValidator
-        "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"
-        (\_ -> "Minimum eight characters, at least one letter, one number and one special character.")
+                        else
+                            Invalid "Password fields must be the same"
+        )
+        (Dict.get "password" toCheck)
+        (Dict.get "passwordRepeated" toCheck)
+        |> Maybe.withDefault Indeterminate
 
 
 
