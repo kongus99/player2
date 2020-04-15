@@ -5,11 +5,12 @@ import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form as Form
 import Bootstrap.Modal as Modal
-import Html exposing (Html, div, h2, text)
+import Html exposing (Html, div, text)
 import Http
 import Login.Form as Form exposing (submit, submitButton)
 import Login.User exposing (User(..), edit, getData, invalidate, userCreation, userLoggedIn, userVerification)
 import RemoteData exposing (WebData)
+import Task
 
 
 type alias Model =
@@ -37,6 +38,7 @@ restrictHtml =
 type Msg
     = Submit
     | Authenticated (WebData String)
+    | Created (WebData String)
     | UserFetched Alert.Msg (WebData String)
     | Edit String String
     | Toggle User
@@ -51,18 +53,31 @@ init =
     { user = userVerification, alert = Alert.init, visible = Modal.hidden }
 
 
+resolveError err403 err =
+    case err of
+        Http.BadStatus status ->
+            if status == 403 then
+                err403
+
+            else
+                "Server status " ++ String.fromInt status ++ "error."
+
+        _ ->
+            "Server error."
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         showFeedback m =
-            update (AlertMsg m) model
+            Task.perform AlertMsg (Task.succeed m)
     in
     case msg of
         Submit ->
             ( model
             , case model.user of
                 Creation u ->
-                    submit u Authenticated
+                    submit u Created
 
                 LoggingIn fields ->
                     submit fields Authenticated
@@ -87,26 +102,31 @@ update msg model =
         Close ->
             ( { init | user = model.user }, Cmd.none )
 
+        Created response ->
+            case response of
+                RemoteData.Failure err ->
+                    ( model, resolveError "Could not create user." err |> Alert.Danger |> showFeedback )
+
+                RemoteData.Success _ ->
+                    ( { model | user = userVerification }, Alert.Success "User created." |> showFeedback )
+
+                _ ->
+                    ( model, Cmd.none )
+
         Authenticated response ->
             case response of
                 RemoteData.Failure err ->
-                    case err of
-                        Http.BadStatus status ->
-                            if status == 403 then
-                                showFeedback <| Alert.Danger "Incorrect login/password."
-
-                            else
-                                showFeedback <| Alert.Danger "Server status error."
-
-                        _ ->
-                            showFeedback <| Alert.Danger "Server error."
+                    ( model
+                    , resolveError "Incorrect login/password." err |> Alert.Danger |> showFeedback
+                    )
 
                 RemoteData.Success _ ->
-                    let
-                        ( m, c ) =
-                            showFeedback <| Alert.Success "Logged in."
-                    in
-                    ( m, Cmd.batch [ c, Alert.Danger "Cannot retrieve user data." |> UserFetched |> getData ] )
+                    ( model
+                    , Cmd.batch
+                        [ Alert.Success "Logged in." |> showFeedback
+                        , Alert.Danger "Cannot retrieve user data." |> UserFetched |> getData
+                        ]
+                    )
 
                 _ ->
                     ( model, Cmd.none )
@@ -115,11 +135,11 @@ update msg model =
             case response of
                 RemoteData.Success s ->
                     userLoggedIn s
-                        |> Maybe.map (\user -> { model | user = user } |> update Close)
-                        |> Maybe.withDefault (showFeedback failMessage)
+                        |> Maybe.map (\user -> ( { init | user = user }, Cmd.none ))
+                        |> Maybe.withDefault ( model, showFeedback failMessage )
 
                 _ ->
-                    showFeedback failMessage
+                    ( model, showFeedback failMessage )
 
         AlertMsg m ->
             ( { model | alert = Alert.update m model.alert }, Cmd.none )

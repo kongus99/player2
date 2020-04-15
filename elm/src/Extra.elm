@@ -49,3 +49,22 @@ isJust maybe =
 
         Just _ ->
             True
+
+
+
+-- model update
+
+
+chain : (msg -> model -> ( model, Cmd msg )) -> model -> List msg -> ( model, Cmd msg )
+chain update model messages =
+    messages
+        |> List.foldl
+            (\message ->
+                \( m, c ) ->
+                    let
+                        ( updatedModel, updatedCmd ) =
+                            update message m
+                    in
+                    ( updatedModel, Cmd.batch [ c, updatedCmd ] )
+            )
+            ( model, Cmd.none )
