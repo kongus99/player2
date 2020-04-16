@@ -43,6 +43,7 @@ tasks.register<YarnTask>("prepare_libs") {
 }
 
 tasks.register<YarnTask>("compile_elm") {
+    outputs.upToDateWhen {false}
     args = listOf("run", "compile_elm")
     dependsOn("prepare_libs")
 }
