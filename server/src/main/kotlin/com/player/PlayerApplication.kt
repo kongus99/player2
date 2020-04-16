@@ -3,13 +3,15 @@ package com.player
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import java.net.InetSocketAddress
 import java.net.Proxy
 
 
-@SpringBootApplication
+@Configuration
+@SpringBootApplication(scanBasePackages = ["common", "com.player.controllers", "com.player.security"])
 class PlayerApplication {
     val host = System.getenv()["http.proxyHost"] ?: System.getenv()["https.proxyHost"]
     val port = System.getenv()["http.proxyPort"] ?: System.getenv()["https.proxyPort"]

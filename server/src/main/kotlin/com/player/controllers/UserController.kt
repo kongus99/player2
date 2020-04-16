@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.*
 import java.security.Principal
 import java.sql.Timestamp
 import java.time.Instant
+import javax.validation.Valid
 
 
 @RestController
+
 class UserController {
 
     @Autowired
@@ -34,7 +36,7 @@ class UserController {
     @CrossOrigin
     @PostMapping("/api/user")
     @Transactional
-    fun create(@RequestBody user: UserToCreate): ResponseEntity<UserData> {
+    fun create(@Valid @RequestBody user: UserToCreate): ResponseEntity<UserData> {
         return try {
             ResponseEntity.ok(dsl?.insertInto(USER, USER.NAME, USER.EMAIL, USER.HASH, USER.LAST_LOGIN)
                     ?.values(user.username, user.email, BCryptPasswordEncoder().encode(user.password), Timestamp.from(Instant.now()))
