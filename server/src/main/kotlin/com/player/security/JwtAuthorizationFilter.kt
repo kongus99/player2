@@ -17,21 +17,21 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JwtAuthorizationFilter(authenticationManager: AuthenticationManager?) : BasicAuthenticationFilter(authenticationManager) {
+class JwtAuthorizationFilter(authenticationManager: AuthenticationManager?, private val jwtSecret: String) : BasicAuthenticationFilter(authenticationManager) {
 
     @Throws(IOException::class, ServletException::class)
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse,
                                   filterChain: FilterChain) {
-        getAuthentication(request)?.run { SecurityContextHolder.getContext().authentication = this }
+        getAuthentication(jwtSecret, request)?.run { SecurityContextHolder.getContext().authentication = this }
         filterChain.doFilter(request, response)
     }
 
     companion object {
-        fun getAuthentication(request: HttpServletRequest): UsernamePasswordAuthenticationToken? {
+        fun getAuthentication(jwtSecret: String, request: HttpServletRequest): UsernamePasswordAuthenticationToken? {
             request.cookies?.find { it.name == SecurityConstants.TOKEN_HEADER }?.let { cookie ->
                 if (cookie.value.isNotEmpty() && cookie.value.startsWith(SecurityConstants.TOKEN_PREFIX)) {
                     try {
-                        val parsedToken = parse(cookie.value)
+                        val parsedToken = parse(jwtSecret, cookie.value)
                         val username = parsedToken.body.subject
                         val seq = parsedToken.body[SEQ] as Int
                         if (isValid(username, { it!!.isNotEmpty() }) && isValid(seq, { JwtAuthenticationFilter.isValidToken(username, it!!) })) {
@@ -56,9 +56,9 @@ class JwtAuthorizationFilter(authenticationManager: AuthenticationManager?) : Ba
         }
 
         private fun <T> isValid(field: T?, validator: (T?) -> Boolean) = field != null && validator(field)
-        private fun parse(token: String): Jws<Claims> {
+        private fun parse(jwtSecret: String, token: String): Jws<Claims> {
             return Jwts.parserBuilder()
-                    .setSigningKey(SecurityConstants.JWT_SECRET.toByteArray())
+                    .setSigningKey(jwtSecret.toByteArray())
                     .build()
                     .parseClaimsJws(token.replace(SecurityConstants.TOKEN_PREFIX, ""))
         }

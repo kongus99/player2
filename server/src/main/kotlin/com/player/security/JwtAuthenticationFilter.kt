@@ -1,7 +1,6 @@
 package com.player.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.player.security.SecurityConstants.Companion.JWT_SECRET
 import com.player.security.SecurityConstants.Companion.ROLE
 import com.player.security.SecurityConstants.Companion.SEQ
 import com.player.security.SecurityConstants.Companion.TOKEN_AUDIENCE
@@ -28,7 +27,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JwtAuthenticationFilter(private val authentication: AuthenticationManager, private val secureCookie: Boolean) : UsernamePasswordAuthenticationFilter() {
+class JwtAuthenticationFilter(private val authentication: AuthenticationManager, private val secureCookie: Boolean, private val jwtSecret: String) : UsernamePasswordAuthenticationFilter() {
 
 
     companion object JwtAuthenticationFilter {
@@ -65,7 +64,7 @@ class JwtAuthenticationFilter(private val authentication: AuthenticationManager,
         val user = authentication.principal as MyUserPrincipal
         val seq = getToken(user.username)
         val roles = user.authorities.map { obj: GrantedAuthority -> obj.authority }
-        val signingKey = JWT_SECRET.toByteArray()
+        val signingKey = jwtSecret.toByteArray()
         val token = Jwts.builder()
                 .signWith(Keys.hmacShaKeyFor(signingKey), SignatureAlgorithm.HS512)
                 .setHeaderParam(TYPE, TOKEN_TYPE)

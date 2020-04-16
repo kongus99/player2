@@ -29,6 +29,7 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
         val secureCookie = env?.get("cookie.secure")?.toBoolean() ?: false
+        val jwtSecret = env?.get("jwt.secret") ?: throw SecurityException("Could not read all required security props.")
         //fix for JWT
         http.csrf().disable()
         //paths
@@ -38,8 +39,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
                 .antMatchers(GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
         //filters
-        http.addFilter(JwtAuthenticationFilter(authenticationManager(), secureCookie))
-                .addFilter(JwtAuthorizationFilter(authenticationManager()))
+        http.addFilter(JwtAuthenticationFilter(authenticationManager(), secureCookie, jwtSecret))
+                .addFilter(JwtAuthorizationFilter(authenticationManager(), jwtSecret))
         //session
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         //log out
@@ -47,7 +48,7 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
                 .permitAll(false)
                 .logoutRequestMatcher(AntPathRequestMatcher("/api/logout", "POST"))
                 .logoutSuccessHandler { req, _, _ ->
-                    val authentication = JwtAuthorizationFilter.getAuthentication(req)
+                    val authentication = JwtAuthorizationFilter.getAuthentication(jwtSecret, req)
                     authentication?.name?.let { JwtAuthenticationFilter.invalidate(it) }
                 }
                 .deleteCookies(SecurityConstants.TOKEN_HEADER)
