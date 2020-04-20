@@ -128,7 +128,7 @@ validate model =
     else if not <| isJust model.videoId then
         ( Indeterminate, Invalid ("No video id found in " ++ model.url) )
 
-    else if not <| isJust model.vid then
+    else if not <| isJust model.video then
         ( Invalid "", Invalid ("Incorrect video id " ++ Maybe.withDefault "" model.videoId) )
 
     else
