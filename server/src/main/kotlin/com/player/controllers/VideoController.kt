@@ -21,30 +21,32 @@ import org.springframework.web.client.RestTemplate
 
 @RestController
 class VideoController {
+
     @Autowired
     private val restTemplate: RestTemplate? = null
+
     @Autowired
     private val dsl: DSLContext? = null
 
     @CrossOrigin
     @GetMapping("/api/video")
     fun videos(): List<Video>? {
-        return dsl?.selectFrom(VIDEO)?.orderBy(VIDEO.ID.asc())?.map { r -> fromVideoRecord(r) }
+        return dsl?.selectFrom(VIDEO)?.orderBy(VIDEO.ID.asc())?.map { fromVideoRecord(it) }
     }
 
     @CrossOrigin
     @GetMapping("/api/video/{id}")
     fun video(@PathVariable("id") id: Long): Video? {
-        return dsl?.selectFrom(VIDEO)?.where(VIDEO.ID.eq(id.toInt()))?.first()?.map { r -> fromRecord(r) }
+        return dsl?.selectFrom(VIDEO)?.where(VIDEO.ID.eq(id.toInt()))?.first()?.map { fromRecord(it) }
     }
 
     @CrossOrigin
     @Transactional
     @PostMapping("/api/video")
     fun createVideo(@RequestBody video: Video): ResponseEntity<Int> {
-        return change(video) { id: String? ->
+        return change(video) {
             dsl?.insertInto(VIDEO, VIDEO.TITLE, VIDEO.VIDEO_URL_ID)
-                    ?.values(video.title, id)?.returning()
+                    ?.values(video.title, it)?.returning()
                     ?.fetchOne()
         }
     }
@@ -53,22 +55,20 @@ class VideoController {
     @Transactional
     @PutMapping("/api/video")
     fun editVideo(@RequestBody video: Video): ResponseEntity<Int> {
-        return change(video) { id: String? ->
-            dsl?.update(VIDEO)?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEO_URL_ID, id)?.where(VIDEO.ID.eq(video.id))
+        return change(video) {
+            dsl?.update(VIDEO)?.set(VIDEO.TITLE, video.title)?.set(VIDEO.VIDEO_URL_ID, it)?.where(VIDEO.ID.eq(video.id))
                     ?.returning()
                     ?.fetchOne()
         }
     }
 
     private fun change(video: Video, query: (String?) -> VideoRecord?): ResponseEntity<Int> {
-        val id = verifyId(video.videoId)
-        return run {
-            val result = query(id)?.id ?: -1
-            if (result > 0)
-                ok(result)
-            else
-                status(HttpStatus.BAD_REQUEST).body(result)
-        }
+        val result = query(verifyId(video.videoId))?.id ?: -1
+        return if (result > 0)
+            ok(result)
+        else
+            status(HttpStatus.BAD_REQUEST).body(result)
+
     }
 
 
@@ -91,7 +91,7 @@ class VideoController {
             if (meta != null) {
                 val mapped = JacksonJsonParser().parseMap(meta)
                 val title = mapped["title"]?.toString()
-                val author = mapped["author_name"]?.toString()
+//                val author = mapped["author_name"]?.toString()
                 ok(Video(null, title!!, verified))
             } else status(HttpStatus.BAD_REQUEST).body(null)
         }

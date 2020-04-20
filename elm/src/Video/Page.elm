@@ -1,11 +1,14 @@
 port module Video.Page exposing (..)
 
+import Alert as Alert
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
-import Html exposing (Html, text)
+import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
+import Login.Login as Login exposing (Msg(..))
+import Login.User as User
 import TextFilter exposing (TextFilter)
 import Video.Edit as Edit exposing (resetSubmitted)
 import Video.List as List exposing (Msg(..))
@@ -18,6 +21,7 @@ port sendOptions : Encode.Value -> Cmd msg
 
 type alias Model =
     { add : Edit.Model
+    , login : Login.Model
     , list : List.Model
     , navbar : Navbar.State
     , options : Options
@@ -29,6 +33,7 @@ type Msg
     = Toggle Option
     | Filter String
     | Add Edit.Msg
+    | LoginMsg Login.Msg
     | ListMsg List.Msg
     | NavbarMsg Navbar.State
 
@@ -42,12 +47,22 @@ init _ =
             Navbar.initialState NavbarMsg
     in
     ( { add = Edit.init
+      , login = Login.init
       , list = list
       , navbar = navbar
       , options = Options.init
       , filter = TextFilter.empty
       }
-    , Cmd.batch [ Cmd.map ListMsg listCmd, navbarCmd ]
+    , Cmd.batch
+        [ Cmd.map ListMsg listCmd
+        , Cmd.map LoginMsg
+            (User.getData <|
+                UserFetched <|
+                    Alert.Warning
+                        "Please log in to unlock more features."
+            )
+        , navbarCmd
+        ]
     )
 
 
@@ -109,6 +124,13 @@ update msg model =
             else
                 ( { model | add = newModel }, Cmd.map Add cmd )
 
+        LoginMsg m ->
+            let
+                ( newModel, cmd ) =
+                    Login.update m model.login
+            in
+            ( { model | login = newModel }, Cmd.map LoginMsg cmd )
+
 
 view model =
     Grid.containerFluid []
@@ -116,7 +138,7 @@ view model =
             [ Grid.col [] [ navbarView model ]
             ]
         , Grid.row [ Row.centerLg, Row.attrs [ class "jumbotron jumbotron-fluid" ] ]
-            [ Grid.col [] [ List.view model.list |> Html.map ListMsg ]
+            [ Grid.col [] [ model.list |> List.view model.login |> Html.map ListMsg ]
             ]
         ]
 
@@ -134,7 +156,9 @@ navbarView model =
             ]
         |> Navbar.customItems
             [ TextFilter.navbar Filter model.filter
+            , Navbar.customItem <| Login.view LoginMsg model.login
+            , Navbar.customItem <| Login.loginButton LoginMsg model.login
             , Navbar.customItem <| Edit.modal Add model.add
-            , Navbar.customItem <| Edit.addButton Add
+            , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login
             ]
         |> Navbar.view model.navbar

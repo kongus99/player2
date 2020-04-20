@@ -11,6 +11,7 @@ import Process
 import RemoteData exposing (WebData)
 import Task
 import Url
+import Validation exposing (Validation(..), feedback, status)
 import Video.Video as Video exposing (Video)
 
 
@@ -120,18 +121,18 @@ editButton video mapper =
     ButtonGroup.button [ Button.info, Button.small, Button.onClick (mapper (Open (Just video))) ] [ text "Edit" ]
 
 
-validation model =
+validate model =
     if String.trim model.url |> String.isEmpty then
-        ( Input.attrs [], Input.attrs [], div [] [] )
+        ( Indeterminate, Indeterminate )
 
     else if not <| isJust model.videoId then
-        ( Input.attrs [], Input.danger, Form.invalidFeedback [] [ text <| "No video id found in " ++ model.url ] )
+        ( Indeterminate, Invalid ("No video id found in " ++ model.url) )
 
-    else if not <| isJust model.video then
-        ( Input.danger, Input.danger, Form.invalidFeedback [] [ text <| "Incorrect video id " ++ Maybe.withDefault "" model.videoId ] )
+    else if not <| isJust model.vid then
+        ( Invalid "", Invalid ("Incorrect video id " ++ Maybe.withDefault "" model.videoId) )
 
     else
-        ( Input.success, Input.success, Form.validFeedback [] [ text <| "Video found for id " ++ Maybe.withDefault "" model.videoId ] )
+        ( Valid, Valid )
 
 
 modal : (Msg -> msg) -> Model -> Html msg
@@ -140,8 +141,8 @@ modal mapper model =
         name =
             model.video |> Maybe.map .title |> Maybe.withDefault ""
 
-        ( upperStatus, lowerStatus, lowerFeedback ) =
-            validation model
+        ( upper, lower ) =
+            validate model
     in
     div []
         [ Modal.config Close
@@ -153,7 +154,7 @@ modal mapper model =
                         [ Form.group []
                             [ Form.label [] [ text "Title" ]
                             , Input.text
-                                [ upperStatus
+                                [ upper |> status
                                 , Input.readonly True
                                 , Input.placeholder "Name"
                                 , Input.value name
@@ -162,12 +163,12 @@ modal mapper model =
                         , Form.group []
                             [ Form.label [] [ text "Url" ]
                             , Input.text
-                                [ lowerStatus
+                                [ lower |> status
                                 , Input.placeholder "Please enter correct youtube url"
                                 , Input.value model.url
                                 , Input.onInput ChangeUrl
                                 ]
-                            , lowerFeedback
+                            , lower |> feedback
                             ]
                         ]
                     ]
