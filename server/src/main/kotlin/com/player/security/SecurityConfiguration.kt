@@ -37,6 +37,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
                 .antMatchers(GET, "/api/user").authenticated()
                 .antMatchers(POST, "/api/user").permitAll()
                 .antMatchers(GET, "/api/**").permitAll()
+                .antMatchers(GET, "/").permitAll()
+                .antMatchers(GET, "/lib/**").permitAll()
                 .anyRequest().authenticated()
         //filters
         http.addFilter(JwtAuthenticationFilter(authenticationManager(), secureCookie, jwtSecret))
