@@ -32,6 +32,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
         val jwtSecret = env?.get("jwt.secret") ?: throw SecurityException("Could not read all required security props.")
         //fix for JWT
         http.csrf().disable()
+        env["spring.profiles.active"]?.let { if (it == "deploy") http.cors().disable() }
+
         //paths
         http.authorizeRequests()
                 .antMatchers(GET, "/api/user").authenticated()
