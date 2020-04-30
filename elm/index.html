@@ -51,6 +51,7 @@
     };
 
     app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
+        player.errorDisplay.close();
         player.src({src: urlWithOptions.url, type: 'video/youtube'});
         applyOptions(player, urlWithOptions.options);
         if (urlWithOptions.options.play)
