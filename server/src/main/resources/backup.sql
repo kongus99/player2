@@ -133,4 +133,5 @@ VALUES ('Dance with the Dead - The Dawn', 'https://www.youtube.com/watch?v=Q8iiO
 INSERT INTO public.video (title, video_url_id)
 VALUES ('Carpenter Brut - Turbo Killer', 'https://www.youtube.com/watch?v=wy9r2qeouiQ');
 INSERT INTO public.video (title, video_url_id)
-VALUES ('Fall Out Boy - THE PHOENIX (Kinetic Typography Lyrics)', 'https://www.youtube.com/watch?v=5JqY-6q-RNA');
+VALUES ('Mick Gordon - The Only Thing They Fear is You (DOOM Eternal OST)',
+        'https://www.youtube.com/watch?v=Akx48dLnccQ');
