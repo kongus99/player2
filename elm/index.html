@@ -3,13 +3,13 @@
 <head>
     <title>Video player</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
 
-    <link type="text/css" href="lib/video.js/dist/video-js.min.css" rel="stylesheet"/>
-    <link type="text/css" href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <script type="application/javascript" src="lib/video.js/dist/video.min.js"></script>
-    <script type="application/javascript" src="lib/videojs-youtube/dist/Youtube.min.js"></script>
-    <script type="application/javascript" src="lib/compiled.min.js"></script>
+    <link href="lib/video.js/dist/video-js.min.css" rel="stylesheet" type="text/css"/>
+    <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <script src="lib/video.js/dist/video.js" type="application/javascript"></script>
+    <script src="lib/videojs-youtube/dist/Youtube.js" type="application/javascript"></script>
+    <script src="lib/compiled.min.js" type="application/javascript"></script>
 </head>
 
 <body>
@@ -19,13 +19,7 @@
             <div id="elm-app"></div>
         </div>
         <div class="col-lg-4">
-            <video
-                    id="mainPlayer"
-                    class="video-js vjs-default-skin sticky-top"
-                    controls
-                    width="480" height="360"
-            >
-            </video>
+            <div id="mainPlayer"></div>
         </div>
     </div>
 </div>
@@ -33,33 +27,62 @@
     let app = Elm.Main.init({
         node: document.getElementById("elm-app")
     });
-    const playerOptions = {
-        techOrder: ["youtube"]
-        , sources: [
-            {
-                type: "video/youtube"
-                , src: "https://www.youtube.com/watch?v="
+    const playerOptions = src => {
+        return {
+            techOrder: ["youtube"]
+            , sources: [
+                {
+                    type: "video/youtube"
+                    , src: src
+                }
+            ]
+            , youtube: {ytControls: 0}
+        }
+    };
+    const getPlayer = () => {
+        return document.querySelector("#mainPlayer>.video-js");
+    }
+
+
+    const createVideoNode = (url) => {
+        if (getPlayer()) {
+            getPlayer().player.dispose();
+        }
+        let main = document.getElementById("mainPlayer");
+        let vid = document.createElement("video");
+        vid.setAttribute("class", "video-js vjs-default-skin sticky-top");
+        vid.setAttribute("controls", "true");
+        vid.setAttribute("height", "360");
+        vid.setAttribute("width", "480");
+        return videojs(main.appendChild(vid), playerOptions(url));
+    };
+
+    const applyOptions = (options) => {
+        if (getPlayer()) {
+            let player = getPlayer().player;
+            player.loop(options.loop);
+            player.off("ended");
+            player.one("ended", (_) => app.ports.videoStatus.send(["ended", 0]));
+        }
+    };
+
+    app.ports.sendOptions.subscribe(applyOptions);
+
+    app.ports.sendUrlWithOptions.subscribe(urlWithOptions => {
+        let player = createVideoNode(urlWithOptions.url);
+        applyOptions(urlWithOptions.options);
+        player.on("timeupdate", (_) => {
+            if (player.duration() > 0) {
+                app.ports.videoStatus.send(["loaded", player.duration()]);
+                player.off("timeupdate");
+                player.on('timeupdate', () => {
+                    app.ports.videoTime.send([player.currentTime(), player.duration()])
+                });
             }
-        ]
-        , youtube: {ytControls: 0}
-    };
-    let player = videojs("mainPlayer", playerOptions);
-    const applyOptions = (player, options) => {
-        player.loop(options.loop);
-        player.off("ended");
-        player.one("ended", (_) => app.ports.videoEnded.send("ended"));
-    };
-
-    app.ports.sendUrlWithOptions.subscribe(function (urlWithOptions) {
-        player.errorDisplay.close();
-        player.src({src: urlWithOptions.url, type: 'video/youtube'});
-        applyOptions(player, urlWithOptions.options);
-        if (urlWithOptions.options.play)
+        });
+        if (urlWithOptions.options.play) {
             player.play();
-    });
-
-    app.ports.sendOptions.subscribe(function (options) {
-        applyOptions(player, options);
+        }
     });
 
 </script>

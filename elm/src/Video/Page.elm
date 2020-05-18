@@ -69,7 +69,7 @@ init _ =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ List.subscriptions model.list |> Sub.map ListMsg
+        [ Sub.map ListMsg List.subscriptions
         , Navbar.subscriptions model.navbar NavbarMsg
         ]
 
