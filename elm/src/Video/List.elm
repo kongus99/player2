@@ -56,7 +56,7 @@ singleVideo player login video =
             [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select (Just video)) ] ]
 
         isActive =
-            player |> Maybe.map (\p -> p.video.id == video.id) |> Maybe.withDefault False
+            player |> Maybe.map (\p -> p.album.video.id == video.id) |> Maybe.withDefault False
 
         attributes =
             if isActive then
@@ -97,7 +97,7 @@ update : TextFilter -> Options -> Msg -> Model -> ( Model, Cmd Msg )
 update filter options msg model =
     let
         nextVideo next m =
-            m.player |> Maybe.andThen (\s -> next s.video <| m.filteredVideos)
+            m.player |> Maybe.andThen (\s -> next s.album.video <| m.filteredVideos)
     in
     case msg of
         Fetch ->
@@ -140,10 +140,18 @@ update filter options msg model =
                         ( model, Cmd.none )
 
             else
-                ( { model | player = Maybe.map (Player.update <| VideoStarted time) model.player }, Cmd.none )
+                let
+                    ( player, cmd ) =
+                        model.player |> (Player.update <| VideoStarted time)
+                in
+                ( { model | player = player }, Cmd.map PlayerUpdate cmd )
 
         PlayerUpdate m ->
-            ( { model | player = Maybe.map (\p -> Player.update m p) model.player }, Cmd.none )
+            let
+                ( player, cmd ) =
+                    model.player |> Player.update m
+            in
+            ( { model | player = player }, Cmd.map PlayerUpdate cmd )
 
 
 filterList filter model =

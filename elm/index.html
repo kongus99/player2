@@ -68,6 +68,13 @@
 
     app.ports.sendOptions.subscribe(applyOptions);
 
+    app.ports.changeTrack.subscribe((start) => {
+        if (getPlayer()) {
+            let player = getPlayer().player;
+            player.currentTime(start);
+        }
+    });
+
     app.ports.sendUrlWithOptions.subscribe(urlWithOptions => {
         let player = createVideoNode(urlWithOptions.url);
         applyOptions(urlWithOptions.options);

@@ -9,11 +9,15 @@ import Extra
 import Html exposing (text)
 import Html.Attributes exposing (href, style)
 import Html.Events exposing (onClick)
-import Set exposing (Set)
+import Json.Encode as Encode
+import Video.Album as Album exposing (Album, Track)
 import Video.Video exposing (Video)
 
 
 port videoTime : (( Float, Float ) -> msg) -> Sub msg
+
+
+port changeTrack : Encode.Value -> Cmd msg
 
 
 subscriptions : Sub Msg
@@ -25,17 +29,9 @@ type alias Duration =
     { start : Float, end : Float }
 
 
-type alias Track =
-    { title : String
-    , end : Float
-    }
-
-
 type alias Model =
-    { video : Video
-    , progress : Maybe Duration
-    , selected : Set Float
-    , allTracks : Dict Float Track
+    { progress : Maybe Duration
+    , album : Album
     }
 
 
@@ -47,65 +43,76 @@ type Msg
 
 init : Video -> Model
 init video =
-    { video = video
-    , progress = Nothing
-    , selected = Set.empty
-    , allTracks = Dict.empty
+    { progress = Nothing
+    , album = Album.init video
     }
 
 
-update msg model =
-    case msg of
-        UpdateProgress progress ->
-            { model | progress = progress }
-
-        ToggleTrack start ->
-            let
-                selected =
-                    if Set.member start model.selected then
-                        Set.remove start model.selected
-
-                    else
-                        Set.insert start model.selected
-            in
-            { model | selected = selected }
-
-        VideoStarted end ->
-            let
-                allTracks =
-                    mock <| Duration 0 end
-
-                selected =
-                    allTracks |> Dict.keys |> Set.fromList
-            in
-            { model | progress = Just (Duration 0 end), allTracks = allTracks, selected = selected }
+encodeStart : Float -> Encode.Value
+encodeStart start =
+    Encode.float start
 
 
-mock : Duration -> Dict Float Track
-mock progress =
+update : Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update msg mm =
+    mm
+        |> Maybe.map
+            (\model ->
+                case msg of
+                    UpdateProgress p ->
+                        p
+                            |> Maybe.map
+                                (\progress ->
+                                    let
+                                        isCorrectTrack ( start, { end } ) =
+                                            progress.start >= start && progress.start < end
+
+                                        cmd =
+                                            Album.playing progress.start model.album
+                                                |> Maybe.map
+                                                    (\playing ->
+                                                        if isCorrectTrack playing then
+                                                            Cmd.none
+
+                                                        else
+                                                            changeTrack <| encodeStart (Tuple.first playing)
+                                                    )
+                                                |> Maybe.withDefault Cmd.none
+                                    in
+                                    ( Just { model | progress = p }, cmd )
+                                )
+                            |> Maybe.withDefault ( mm, Cmd.none )
+
+                    ToggleTrack start ->
+                        ( Just { model | album = Album.toggle start model.album }, Cmd.none )
+
+                    VideoStarted end ->
+                        ( Just { model | progress = Just (Duration 0 end), album = Album.mock model.album end }, Cmd.none )
+            )
+        |> Maybe.withDefault ( mm, Cmd.none )
+
+
+trackBars : Model -> List (List (Progress.Option Msg))
+trackBars m =
     let
-        starts =
-            [ 0, progress.end / 4, progress.end / 2, 3 * progress.end / 4 ]
+        playing =
+            m.progress
+                |> Maybe.andThen (\p -> Album.playing p.start m.album)
+                |> Maybe.map Tuple.first
 
-        ends =
-            starts |> List.tail |> Maybe.withDefault [] |> List.reverse |> (::) progress.end |> List.reverse
-    in
-    List.map2 (\s -> \e -> ( s, Track (String.fromFloat s) e )) starts ends |> Dict.fromList
+        isPlaying start =
+            playing |> Maybe.map (\p -> p == start) |> Maybe.withDefault False
 
-
-tracks : Model -> List (List (Progress.Option Msg))
-tracks { progress, selected, allTracks } =
-    let
-        bar index ( start, track ) =
-            progress
+        bar index ( start, { title, end } ) =
+            m.progress
                 |> Maybe.map
                     (\p ->
                         let
                             length =
-                                (track.end - start) / p.end * 100.0
+                                (end - start) / p.end * 100.0
 
                             color =
-                                if selected |> Set.member start then
+                                if Album.active start m.album then
                                     Progress.success
 
                                 else
@@ -119,9 +126,9 @@ tracks { progress, selected, allTracks } =
                                     Spacing.ml1
 
                             attrs =
-                                onClick (ToggleTrack start) :: spacing :: Extra.bottomTooltip track.title |> Progress.attrs
+                                onClick (ToggleTrack start) :: spacing :: Extra.bottomTooltip title |> Progress.attrs
                         in
-                        if p.start >= start && p.start < track.end then
+                        if isPlaying start then
                             [ color, Progress.value length, Progress.animated, attrs ]
 
                         else
@@ -129,14 +136,14 @@ tracks { progress, selected, allTracks } =
                     )
                 |> Maybe.withDefault []
     in
-    allTracks |> Dict.toList |> List.indexedMap bar
+    m.album.tracks |> Dict.toList |> List.indexedMap bar
 
 
 view : Model -> Html.Html Msg
 view model =
     Card.config [ Card.attrs [ style "width" "100%" ] ]
         |> Card.block []
-            [ Block.link [ href "#" ] [ text model.video.title ]
-            , Block.custom <| Progress.progressMulti <| tracks model
+            [ Block.link [ href "#" ] [ text model.album.video.title ]
+            , Block.custom <| Progress.progressMulti <| trackBars model
             ]
         |> Card.view
