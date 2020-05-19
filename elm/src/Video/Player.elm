@@ -7,7 +7,7 @@ import Bootstrap.Utilities.Spacing as Spacing
 import Dict exposing (Dict)
 import Extra
 import Html exposing (text)
-import Html.Attributes exposing (href, style)
+import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Json.Encode as Encode
 import Video.Album as Album exposing (Album, Track)
@@ -92,17 +92,9 @@ update msg mm =
         |> Maybe.withDefault ( mm, Cmd.none )
 
 
-trackBars : Model -> List (List (Progress.Option Msg))
-trackBars m =
+trackBars : Float -> Model -> List (List (Progress.Option Msg))
+trackBars playingStart m =
     let
-        playing =
-            m.progress
-                |> Maybe.andThen (\p -> Album.playing p.start m.album)
-                |> Maybe.map Tuple.first
-
-        isPlaying start =
-            playing |> Maybe.map (\p -> p == start) |> Maybe.withDefault False
-
         bar index ( start, { title, end } ) =
             m.progress
                 |> Maybe.map
@@ -128,7 +120,7 @@ trackBars m =
                             attrs =
                                 onClick (ToggleTrack start) :: spacing :: Extra.bottomTooltip title |> Progress.attrs
                         in
-                        if isPlaying start then
+                        if playingStart == start then
                             [ color, Progress.value length, Progress.animated, attrs ]
 
                         else
@@ -141,9 +133,16 @@ trackBars m =
 
 view : Model -> Html.Html Msg
 view model =
+    let
+        ( trackStart, trackTitle ) =
+            model.progress
+                |> Maybe.andThen (\p -> Album.playing p.start model.album)
+                |> Maybe.map (\( start, { title } ) -> ( start, " : " ++ title ))
+                |> Maybe.withDefault ( 0, "" )
+    in
     Card.config [ Card.attrs [ style "width" "100%" ] ]
         |> Card.block []
-            [ Block.link [ href "#" ] [ text model.album.video.title ]
-            , Block.custom <| Progress.progressMulti <| trackBars model
+            [ Block.titleH4 [] [ text <| model.album.video.title ++ trackTitle ]
+            , Block.custom <| Progress.progressMulti <| trackBars trackStart model
             ]
         |> Card.view
