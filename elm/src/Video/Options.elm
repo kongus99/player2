@@ -6,7 +6,7 @@ import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Encode as Encode
 import Url
-import Video.Video as Video exposing (Video)
+import Video.Video as Video exposing (Video, VideoData)
 
 
 type Option
@@ -54,7 +54,7 @@ encode options =
         ]
 
 
-encodeWithUrl : Video -> Options -> Encode.Value
+encodeWithUrl : VideoData -> Options -> Encode.Value
 encodeWithUrl video options =
     Encode.object
         [ ( "url", video.videoId |> Video.toUrl |> Maybe.map Url.toString |> Maybe.withDefault "" |> Encode.string )

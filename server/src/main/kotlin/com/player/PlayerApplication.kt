@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.client.SimpleClientHttpRequestFactory
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor
 import org.springframework.web.client.RestTemplate
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -28,6 +29,11 @@ class PlayerApplication {
             }
             return template
         }
+
+    @Bean
+    fun methodValidationPostProcessor(): MethodValidationPostProcessor {
+        return MethodValidationPostProcessor()
+    }
 
 
     companion object {

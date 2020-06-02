@@ -15,10 +15,10 @@ import Login.Login as Login
 import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
 import Url
-import Video.Edit as Edit exposing (Msg(..), resetSubmitted)
+import Video.Edit as Edit exposing (Msg(..))
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Player as Player exposing (Msg(..))
-import Video.Video as Video exposing (Video)
+import Video.Video as Video exposing (Video, VideoData)
 
 
 port sendUrlWithOptions : Encode.Value -> Cmd msg
@@ -34,32 +34,29 @@ subscriptions =
 
 type alias Model =
     { edit : Edit.Model
-    , originalVideos : List Video
-    , filteredVideos : List Video
-    , player : Maybe Player.Model
+    , originalVideos : List VideoData
+    , filteredVideos : List VideoData
+    , player : Player.Model
     }
 
 
 view : Login.Model -> Model -> Html Msg
 view login model =
     div []
-        [ Edit.modal Edit model.edit
-        , model.player |> Maybe.map Player.view |> Maybe.withDefault (div [] []) |> Html.map PlayerUpdate
+        [ Edit.view Edit model.edit
+        , Player.view model.player |> Html.map PlayerUpdate
         , ListGroup.custom (List.map (singleVideo model.player login) model.filteredVideos)
         ]
 
 
-singleVideo : Maybe Player.Model -> Login.Model -> Video -> ListGroup.CustomItem Msg
+singleVideo : Player.Model -> Login.Model -> VideoData -> ListGroup.CustomItem Msg
 singleVideo player login video =
     let
         defaultAttributes =
             [ ListGroup.attrs [ href "#", Flex.col, Flex.alignItemsStart, onClick (Select (Just video)) ] ]
 
-        isActive =
-            player |> Maybe.map (\p -> p.album.video.id == video.id) |> Maybe.withDefault False
-
         attributes =
-            if isActive then
+            if Player.isActive player video.id then
                 ListGroup.active :: defaultAttributes
 
             else
@@ -86,25 +83,26 @@ singleVideo player login video =
 type Msg
     = VideoStatus ( String, Float )
     | PlayerUpdate Player.Msg
-    | Select (Maybe Video)
+    | Select (Maybe VideoData)
     | Edit Edit.Msg
-    | Delete Video
+    | Delete VideoData
     | Fetch
-    | Fetched (WebData (List Video))
+    | Fetched (WebData (List VideoData))
 
 
 update : TextFilter -> Options -> Msg -> Model -> ( Model, Cmd Msg )
 update filter options msg model =
     let
-        nextVideo next m =
-            m.player |> Maybe.andThen (\s -> next s.album.video <| m.filteredVideos)
+        nextVideo : (VideoData -> List VideoData -> Maybe VideoData) -> Maybe VideoData
+        nextVideo next =
+            model.player |> Player.getVideo |> Maybe.andThen (\c -> next c model.filteredVideos)
     in
     case msg of
         Fetch ->
-            ( { model | originalVideos = [], filteredVideos = [] }, Video.get Fetched )
+            ( { model | originalVideos = [], filteredVideos = [] }, Video.getAll Fetched )
 
         Select video ->
-            ( { model | player = Maybe.map Player.init video }
+            ( { model | player = Player.select video }
             , video
                 |> Maybe.map (\v -> Options.encodeWithUrl v options |> sendUrlWithOptions)
                 |> Maybe.withDefault Cmd.none
@@ -115,11 +113,7 @@ update filter options msg model =
                 ( newModel, cmd ) =
                     Edit.update m model.edit
             in
-            if newModel.submitted then
-                ( { model | edit = newModel |> resetSubmitted }, Video.get Fetched )
-
-            else
-                ( { model | edit = newModel }, Cmd.map Edit cmd )
+            ( { model | edit = newModel }, Cmd.map Edit cmd )
 
         Delete video ->
             ( model, Video.delete Fetch video )
@@ -131,10 +125,10 @@ update filter options msg model =
             if status == "ended" then
                 case ( Options.active Playlist options, Options.active Loop options ) of
                     ( True, True ) ->
-                        update filter options (Select <| nextVideo Extra.cyclicNext model) model
+                        update filter options (Select <| nextVideo Extra.cyclicNext) model
 
                     ( True, False ) ->
-                        update filter options (Select <| nextVideo Extra.next model) model
+                        update filter options (Select <| nextVideo Extra.next) model
 
                     _ ->
                         ( model, Cmd.none )
@@ -142,14 +136,14 @@ update filter options msg model =
             else
                 let
                     ( player, cmd ) =
-                        model.player |> (Player.update <| VideoStarted time)
+                        Player.update (VideoStarted time) model.player
                 in
                 ( { model | player = player }, Cmd.map PlayerUpdate cmd )
 
         PlayerUpdate m ->
             let
                 ( player, cmd ) =
-                    model.player |> Player.update m
+                    Player.update m model.player
             in
             ( { model | player = player }, Cmd.map PlayerUpdate cmd )
 
@@ -166,7 +160,7 @@ init =
     ( { originalVideos = []
       , filteredVideos = []
       , edit = Edit.init
-      , player = Nothing
+      , player = Player.init
       }
-    , Video.get Fetched
+    , Video.getAll Fetched
     )

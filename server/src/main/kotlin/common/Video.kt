@@ -1,10 +1,9 @@
 package common
 
-import java.lang.IllegalArgumentException
-
 data class Video(val id: Int?, val title: String, val videoId: String) {
     companion object Parser {
-        private val videoIdRegex = Regex("^[\\w-]+$")
+        const val idPattern = "^[\\w-]+$"
+        private val videoIdRegex = Regex(idPattern)
 
         fun verifyId(videoId: String): String {
             if (videoIdRegex.matches(videoId))

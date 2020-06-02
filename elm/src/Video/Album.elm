@@ -2,7 +2,6 @@ module Video.Album exposing (..)
 
 import Dict exposing (Dict)
 import Set exposing (Set)
-import Video.Video exposing (Video)
 
 
 type alias Track =
@@ -12,19 +11,18 @@ type alias Track =
 
 
 type alias Album =
-    { video : Video
-    , selected : Set Float
+    { selected : Set Float
     , tracks : Dict Float Track
     }
 
 
-init : Video -> Album
-init video =
-    Album video Set.empty Dict.empty
+init : Album
+init =
+    Album Set.empty Dict.empty
 
 
-mock : Album -> Float -> Album
-mock album end =
+mock : Float -> Album
+mock end =
     let
         starts =
             [ 0, end / 4, end / 2, 3 * end / 4 ]
@@ -35,7 +33,7 @@ mock album end =
         tracks =
             List.map2 (\s -> \e -> ( s, Track (String.fromFloat s) e )) starts ends |> Dict.fromList
     in
-    Album album.video (Dict.keys tracks |> Set.fromList) tracks
+    Album (Dict.keys tracks |> Set.fromList) tracks
 
 
 toggle : Float -> Album -> Album

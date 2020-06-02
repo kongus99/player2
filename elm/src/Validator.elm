@@ -46,14 +46,20 @@ password =
         (\_ -> "Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character.")
 
 
+url =
+    regexpValidator
+        "[(http(s)?):\\/\\/(www\\.)?a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)"
+        (\_ -> "Correct url expected.")
+
+
 regexpValidator : String -> (String -> String) -> String -> Validation
 regexpValidator regexpString errorMessage tested =
     let
         regexp =
             Regex.fromString regexpString |> Maybe.withDefault Regex.never
 
-        isValid user =
-            Regex.find regexp user |> List.isEmpty |> not
+        isValid string =
+            Regex.find regexp string |> List.isEmpty |> not
     in
     if (String.trim tested |> String.length) < 3 then
         Indeterminate

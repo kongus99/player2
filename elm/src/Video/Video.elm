@@ -1,32 +1,38 @@
-module Video.Video exposing (Video, delete, get, parseId, post, put, toUrl, verify)
+module Video.Video exposing (..)
 
+import Dict
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, maybe, nullable)
-import Json.Decode.Pipeline exposing (required)
-import Json.Encode as Encode
+import Json.Decode as Decode exposing (Decoder, int, list, nullable)
+import Json.Decode.Pipeline exposing (hardcoded, required)
+import Login.Form as Form exposing (Form, Type(..), fieldValidator, infoInput, serializableEmptyInput, serializableInfoInput)
 import Regex
-import RemoteData exposing (RemoteData(..), WebData)
+import RemoteData exposing (WebData)
+import Set
+import String exposing (fromInt)
 import Url exposing (Url)
+import Validation exposing (Validation)
+import Validator
+import Video.Album exposing (Album)
 
 
-type alias Video =
-    { id : Maybe Int
+type alias VideoData =
+    { id : Int
     , title : String
+    , videoId : String
+    , album : Maybe Album
+    }
+
+
+type alias VerifiedVideo =
+    { title : String
     , videoId : String
     }
 
 
-parseId : String -> Maybe String
-parseId videoUrl =
-    Regex.fromString "v=([^&\\s]+)"
-        |> Maybe.andThen
-            (\r ->
-                Regex.find r videoUrl
-                    |> List.map .submatches
-                    |> List.foldl List.append []
-                    |> List.filterMap identity
-                    |> List.head
-            )
+type Video
+    = Unverified Form
+    | Verified Form
+    | Persisted Int Form
 
 
 toUrl : String -> Maybe Url
@@ -38,81 +44,155 @@ url =
     "/api/video"
 
 
-verify : String -> (WebData Video -> msg) -> Cmd msg
-verify videoId msg =
+videoIdRegexp =
+    "v=([^&\\s]+)"
+
+
+videoIdValidator : String -> Validation
+videoIdValidator =
+    Validator.regexpValidator videoIdRegexp (\_ -> "This url does not contain video id.")
+
+
+parseId : String -> String
+parseId videoUrl =
+    Regex.fromString videoIdRegexp
+        |> Maybe.andThen
+            (\r ->
+                Regex.find r videoUrl
+                    |> List.map .submatches
+                    |> List.foldl List.append []
+                    |> List.filterMap identity
+                    |> List.head
+            )
+        |> Maybe.withDefault ""
+
+
+
+-- video states
+
+
+unverified : Video
+unverified =
+    Unverified
+        { fields =
+            [ ( "videoUrl"
+              , serializableEmptyInput Form.Url
+                    [ fieldValidator Validator.url "videoUrl"
+                    , fieldValidator videoIdValidator "videoUrl"
+                    ]
+                    "Video url"
+                    (\( _, v ) -> ( "videoId", parseId v.value ))
+              )
+            ]
+                |> Dict.fromList
+        , order = [ "videoUrl" ]
+        , excluded = Set.empty
+        }
+
+
+verified : ( Maybe Int, VerifiedVideo ) -> Video
+verified ( mid, v ) =
+    case mid of
+        Just id ->
+            persisted (VideoData id v.title v.videoId Nothing)
+
+        Nothing ->
+            Verified
+                { fields =
+                    [ ( "title"
+                      , infoInput v.title
+                      )
+                    , ( "videoId"
+                      , serializableInfoInput ("https://www.youtube.com/watch?v=" ++ v.videoId) (\( _, f ) -> ( "videoId", parseId f.value ))
+                      )
+                    ]
+                        |> Dict.fromList
+                , order = [ "title", "videoId" ]
+                , excluded = Set.empty
+                }
+
+
+persisted : VideoData -> Video
+persisted v =
+    Persisted v.id
+        { fields =
+            [ ( "title"
+              , infoInput v.title
+              )
+            , ( "videoUrl"
+              , infoInput ("https://www.youtube.com/watch?v=" ++ v.videoId)
+              )
+            ]
+                |> Dict.fromList
+        , order = [ "title", "videoUrl" ]
+        , excluded = Set.fromList [ "title", "videoUrl" ]
+        }
+
+
+
+-- backend api
+
+
+get : Int -> (WebData VideoData -> c) -> Cmd c
+get id msg =
     Http.get
-        { url = "/api/verify?videoId=" ++ videoId
+        { url = url ++ "/" ++ fromInt id
         , expect =
-            decode
+            decodeData
                 |> Http.expectJson (RemoteData.fromResult >> msg)
         }
 
 
-get : (WebData (List Video) -> msg) -> Cmd msg
-get msg =
+getAll : (WebData (List VideoData) -> msg) -> Cmd msg
+getAll msg =
     Http.get
         { url = url
         , expect =
-            list decode |> Http.expectJson (RemoteData.fromResult >> msg)
+            list decodeData |> Http.expectJson (RemoteData.fromResult >> msg)
         }
 
 
-post : (WebData (Maybe Int) -> c) -> Video -> Cmd c
-post msg video =
-    Http.post
-        { url = url
-        , body =
-            encode video
-                |> Http.jsonBody
-        , expect = Http.expectJson (RemoteData.fromResult >> msg) (nullable int)
-        }
-
-
-delete : c -> Video -> Cmd c
+delete : c -> VideoData -> Cmd c
 delete msg video =
-    video.id
-        |> Maybe.map
-            (\id ->
-                Http.request
-                    { method = "DELETE"
-                    , headers = []
-                    , url = url ++ "/" ++ String.fromInt id
-                    , body = Http.emptyBody
-                    , expect = Http.expectJson (RemoteData.fromResult >> (\_ -> msg)) (nullable int)
-                    , timeout = Nothing
-                    , tracker = Nothing
-                    }
-            )
-        |> Maybe.withDefault Cmd.none
-
-
-put : (WebData (Maybe Int) -> c) -> Video -> Cmd c
-put msg video =
     Http.request
-        { method = "PUT"
+        { method = "DELETE"
         , headers = []
-        , url = url
-        , body =
-            encode video
-                |> Http.jsonBody
-        , expect = Http.expectJson (RemoteData.fromResult >> msg) (nullable int)
+        , url = url ++ "/" ++ String.fromInt video.id
+        , body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> (\_ -> msg)) (nullable int)
         , timeout = Nothing
         , tracker = Nothing
         }
 
 
-encode : Video -> Encode.Value
-encode video =
-    Encode.object
-        [ ( "id", Encode.int (Maybe.withDefault -1 video.id) )
-        , ( "title", Encode.string video.title )
-        , ( "videoId", Encode.string video.videoId )
-        ]
+edit : ( String, String ) -> Video -> Video
+edit new video =
+    case video of
+        Unverified f ->
+            Unverified (Form.edit new f)
+
+        Persisted id f ->
+            Persisted id (Form.edit new f)
+
+        _ ->
+            video
 
 
-decode : Decoder Video
-decode =
-    Decode.succeed Video
-        |> required "id" (Decode.maybe Decode.int)
+decodeVerified : Decoder ( Maybe Int, VerifiedVideo )
+decodeVerified =
+    Decode.map2
+        (\id -> \vid -> ( id, vid ))
+        (Decode.field "id" (Decode.nullable Decode.int))
+        (Decode.succeed VerifiedVideo
+            |> required "title" Decode.string
+            |> required "videoId" Decode.string
+        )
+
+
+decodeData : Decoder VideoData
+decodeData =
+    Decode.succeed VideoData
+        |> required "id" Decode.int
         |> required "title" Decode.string
         |> required "videoId" Decode.string
+        |> hardcoded Nothing

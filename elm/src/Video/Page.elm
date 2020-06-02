@@ -4,16 +4,15 @@ import Alert as Alert
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
-import Html exposing (Html, div, text)
+import Html exposing (Html, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
 import Login.Login as Login exposing (Msg(..))
 import Login.User as User
 import TextFilter exposing (TextFilter)
-import Video.Edit as Edit exposing (resetSubmitted)
+import Video.Edit as Edit
 import Video.List as List exposing (Msg(..))
 import Video.Options as Options exposing (Option(..), Options)
-import Video.Video as Video
 
 
 port sendOptions : Encode.Value -> Cmd msg
@@ -118,11 +117,7 @@ update msg model =
                 ( newModel, cmd ) =
                     Edit.update m model.add
             in
-            if newModel.submitted then
-                ( { model | add = newModel |> resetSubmitted }, Video.get (ListMsg << Fetched) )
-
-            else
-                ( { model | add = newModel }, Cmd.map Add cmd )
+            ( { model | add = newModel }, Cmd.map Add cmd )
 
         LoginMsg m ->
             let
@@ -158,7 +153,7 @@ navbarView model =
             [ TextFilter.navbar Filter model.filter
             , Navbar.customItem <| Login.view LoginMsg model.login
             , Navbar.customItem <| Login.loginButton LoginMsg model.login
-            , Navbar.customItem <| Edit.modal Add model.add
+            , Navbar.customItem <| Edit.view Add model.add
             , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login
             ]
         |> Navbar.view model.navbar
