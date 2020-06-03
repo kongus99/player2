@@ -41,7 +41,7 @@ object Album {
     }
 
     data class Track(val start: Int, val end: Int?,
-                     @get:Pattern(regexp = "^[a-zA-Z0-9_-]{3,50}$",
+                     @get:Pattern(regexp = "^\\w{3,50}.*$",
                              message = "Lower and upper case letters, numbers, - and _, min 3 and max 50 chars.")
                      val title: String)
 
@@ -66,7 +66,7 @@ object Album {
                             .zip(listOf(1, 60, 3600))
                             .map { it.first * it.second }
                             .fold(0, { a, b -> a + b })
-                    if (seconds > 0) Pair(parsed.last(), seconds)
+                    if (seconds >= 0) Pair(parsed.last(), seconds)
                     else null
                 } else null
             }

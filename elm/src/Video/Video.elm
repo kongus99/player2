@@ -4,7 +4,7 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, nullable)
 import Json.Decode.Pipeline exposing (hardcoded, required)
-import Login.Form as Form exposing (Form, Type(..), fieldValidator, infoInput, serializableEmptyInput, serializableInfoInput)
+import Login.Form as Form exposing (Form, Type(..), emptyInput, fieldValidator, infoInput, serializableEmptyInput, serializableInfoInput)
 import Regex
 import RemoteData exposing (WebData)
 import Set
@@ -76,11 +76,11 @@ unverified =
     Unverified
         { fields =
             [ ( "videoUrl"
-              , serializableEmptyInput Form.Url
+              , serializableEmptyInput Nothing
+                    (Form.Url "Video url")
                     [ fieldValidator Validator.url "videoUrl"
                     , fieldValidator videoIdValidator "videoUrl"
                     ]
-                    "Video url"
                     (\( _, v ) -> ( "videoId", parseId v.value ))
               )
             ]
@@ -100,10 +100,10 @@ verified ( mid, v ) =
             Verified
                 { fields =
                     [ ( "title"
-                      , infoInput v.title
+                      , infoInput (Form.Label "title" "Title") v.title
                       )
                     , ( "videoId"
-                      , serializableInfoInput ("https://www.youtube.com/watch?v=" ++ v.videoId) (\( _, f ) -> ( "videoId", parseId f.value ))
+                      , serializableInfoInput (Form.Label "videoId" "Url") ("https://www.youtube.com/watch?v=" ++ v.videoId) (\( _, f ) -> ( "videoId", parseId f.value ))
                       )
                     ]
                         |> Dict.fromList
@@ -117,14 +117,17 @@ persisted v =
     Persisted v.id
         { fields =
             [ ( "title"
-              , infoInput v.title
+              , infoInput (Form.Label "title" "Title") v.title
               )
             , ( "videoUrl"
-              , infoInput ("https://www.youtube.com/watch?v=" ++ v.videoId)
+              , infoInput (Form.Label "videoUrl" "Url") ("https://www.youtube.com/watch?v=" ++ v.videoId)
+              )
+            , ( "album"
+              , serializableEmptyInput (Form.Label "album" "Album" |> Just) (TextArea 20) [] (\( _, f ) -> ( "tracksString", f.value ))
               )
             ]
                 |> Dict.fromList
-        , order = [ "title", "videoUrl" ]
+        , order = [ "title", "videoUrl", "album" ]
         , excluded = Set.fromList [ "title", "videoUrl" ]
         }
 

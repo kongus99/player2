@@ -16,6 +16,10 @@ type alias Album =
     }
 
 
+url id =
+    "/api/video/" ++ String.fromInt id ++ "/album"
+
+
 init : Album
 init =
     Album Set.empty Dict.empty

@@ -1,10 +1,13 @@
 module Login.Form exposing (..)
 
 import Bootstrap.Button as Button
+import Bootstrap.Form as Form
 import Bootstrap.Form.Input as Input exposing (Option)
+import Bootstrap.Form.Textarea as Textarea
 import Bootstrap.Modal as Modal exposing (Config)
 import Dict
-import Html exposing (Html, text)
+import Html exposing (Html, div, text)
+import Html.Attributes exposing (for)
 import Http
 import Json.Decode as Decode
 import Json.Encode as E
@@ -16,18 +19,25 @@ import Validator exposing (Validator)
 
 
 type Type
-    = Password
-    | Text
-    | Url
-    | Email
+    = Password String
+    | Text String
+    | Url String
+    | Email String
+    | TextArea Int
 
 
 type alias Serializer =
     ( String, Field ) -> ( String, String )
 
 
+type alias Label =
+    { id : String
+    , label : String
+    }
+
+
 type alias Field =
-    { placeholder : String
+    { label : Maybe Label
     , disabled : Bool
     , type_ : Type
     , value : String
@@ -48,15 +58,15 @@ type alias Form =
     }
 
 
-emptyInput : Type -> List (Validator Field) -> String -> ValidatedField
-emptyInput type_ validators placeholder =
-    serializableEmptyInput type_ validators placeholder (\( k, v ) -> ( k, v.value ))
+emptyInput : Maybe Label -> Type -> List (Validator Field) -> ValidatedField
+emptyInput label type_ validators =
+    serializableEmptyInput label type_ validators (\( k, v ) -> ( k, v.value ))
 
 
-serializableEmptyInput : Type -> List (Validator Field) -> String -> Serializer -> ValidatedField
-serializableEmptyInput type_ validators placeholder serializer =
+serializableEmptyInput : Maybe Label -> Type -> List (Validator Field) -> Serializer -> ValidatedField
+serializableEmptyInput label type_ validators serializer =
     { field =
-        { placeholder = placeholder
+        { label = label
         , type_ = type_
         , disabled = False
         , value = ""
@@ -66,16 +76,16 @@ serializableEmptyInput type_ validators placeholder serializer =
     }
 
 
-infoInput : String -> ValidatedField
-infoInput value =
-    serializableInfoInput value (\( k, v ) -> ( k, v.value ))
+infoInput : Label -> String -> ValidatedField
+infoInput label value =
+    serializableInfoInput label value (\( k, v ) -> ( k, v.value ))
 
 
-serializableInfoInput : String -> Serializer -> ValidatedField
-serializableInfoInput value serializer =
+serializableInfoInput : Label -> String -> Serializer -> ValidatedField
+serializableInfoInput label value serializer =
     { field =
-        { placeholder = ""
-        , type_ = Text
+        { label = Just label
+        , type_ = Text ""
         , disabled = True
         , value = value
         }
@@ -204,34 +214,57 @@ view msg form =
         toValidate =
             form.fields |> Dict.map (\_ -> \vf -> vf.field)
 
-        typeToInput type_ =
-            case type_ of
-                Password ->
-                    Input.password
+        generateLabel field =
+            field.label |> Maybe.map (\l -> Form.label [ for l.id ] [ text l.label ]) |> Maybe.withDefault (div [] [])
 
-                Text ->
-                    Input.text
+        generateField key validation field =
+            let
+                inputField generateInput placeholder =
+                    generateInput
+                        [ Validation.inputStatus validation
+                        , Input.disabled field.disabled
+                        , Input.placeholder placeholder
+                        , Input.value field.value
+                        , Input.onInput <| msg key
+                        , field.label |> Maybe.map (\l -> Input.id l.id) |> Maybe.withDefault (Input.attrs [])
+                        ]
+            in
+            case field.type_ of
+                Password placeholder ->
+                    inputField Input.password placeholder
 
-                Url ->
-                    Input.url
+                Text placeholder ->
+                    inputField Input.text placeholder
 
-                Email ->
-                    Input.email
+                Url placeholder ->
+                    inputField Input.url placeholder
 
-        singleInput : ( String, ValidatedField ) -> List (Html msg)
-        singleInput ( key, valField ) =
+                Email placeholder ->
+                    inputField Input.email placeholder
+
+                TextArea rows ->
+                    Textarea.textarea
+                        [ Validation.textAreaStatus validation
+                        , if field.disabled then
+                            Textarea.disabled
+
+                          else
+                            Textarea.attrs []
+                        , Textarea.value field.value
+                        , Textarea.onInput <| msg key
+                        , field.label |> Maybe.map (\l -> Textarea.id l.id) |> Maybe.withDefault (Textarea.attrs [])
+                        , Textarea.rows rows
+                        ]
+
+        formField : ( String, ValidatedField ) -> List (Html msg)
+        formField ( key, valField ) =
             let
                 validation =
                     valField.validators |> List.map (\v -> v toValidate) |> Validation.reduce
             in
-            [ typeToInput valField.field.type_
-                [ Validation.status validation
-                , Input.disabled valField.field.disabled
-                , Input.placeholder valField.field.placeholder
-                , Input.value valField.field.value
-                , Input.onInput <| msg key
-                ]
+            [ generateLabel valField.field
+            , generateField key validation valField.field
             , Validation.feedback validation
             ]
     in
-    form.order |> List.filterMap (\k -> Dict.get k form.fields |> Maybe.map (\v -> ( k, v ))) |> List.map singleInput
+    form.order |> List.filterMap (\k -> Dict.get k form.fields |> Maybe.map (\v -> ( k, v ))) |> List.map formField

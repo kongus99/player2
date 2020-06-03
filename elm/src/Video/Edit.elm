@@ -11,6 +11,7 @@ import Json.Decode
 import Login.Form as Form exposing (resolveError)
 import RemoteData exposing (WebData)
 import Task
+import Video.Album as Album
 import Video.Video as Video exposing (VerifiedVideo, Video(..), VideoData, decodeData, decodeVerified, edit, persisted, unverified, verified)
 
 
@@ -29,6 +30,7 @@ type Msg
     = Submit
     | VerifyResponse (WebData ( Maybe Int, VerifiedVideo ))
     | PersistResponse (WebData Int)
+    | AlbumSaveResponse (WebData Int)
     | FetchResponse (WebData VideoData)
     | Edit String String
     | Open Video
@@ -63,8 +65,8 @@ update msg model =
                 Verified v ->
                     Form.post Video.url v (Form.expectJson PersistResponse Json.Decode.int)
 
-                _ ->
-                    Cmd.none
+                Persisted id v ->
+                    Form.post (Album.url id) v (Form.expectJson AlbumSaveResponse Json.Decode.int)
             )
 
         VerifyResponse response ->
@@ -75,6 +77,11 @@ update msg model =
         PersistResponse response ->
             resolveResponse "Could not save video."
                 (\id -> ( model, Cmd.batch [ Alert.Success "Video saved." |> showFeedback, Video.get id FetchResponse ] ))
+                response
+
+        AlbumSaveResponse response ->
+            resolveResponse "Could not save album for this video"
+                (\id -> ( model, Cmd.batch [ Alert.Success "Album saved." |> showFeedback ] ))
                 response
 
         FetchResponse response ->
@@ -132,10 +139,3 @@ addButton mapper =
 editButton : VideoData -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
 editButton video mapper =
     ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open <| persisted video ] [ text "Edit" ]
-
-
-
---Form.group []
---                           [ Form.label [] [ text "Album" ]
---                           , Textarea.textarea []
---

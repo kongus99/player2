@@ -30,16 +30,16 @@ userCreation =
     Creation
         { fields =
             [ ( "username"
-              , emptyInput Text [ fieldValidator username "username" ] "Username"
+              , emptyInput Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "email"
-              , emptyInput Email [ fieldValidator email "email" ] "Email"
+              , emptyInput Nothing (Email "Email") [ fieldValidator email "email" ]
               )
             , ( "password"
-              , emptyInput Password [ fieldValidator password "password" ] "Password"
+              , emptyInput Nothing (Password "Password") [ fieldValidator password "password" ]
               )
             , ( "passwordRepeated"
-              , emptyInput Password [ validatePasswordsMatch ] "Repeat password"
+              , emptyInput Nothing (Password "Repeat password") [ validatePasswordsMatch ]
               )
             ]
                 |> Dict.fromList
@@ -53,10 +53,10 @@ userVerification =
     LoggingIn
         { fields =
             [ ( "username"
-              , emptyInput Text [ fieldValidator username "username" ] "Username"
+              , emptyInput Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "password"
-              , emptyInput Password [ fieldValidator emptyString "password" ] "Password"
+              , emptyInput Nothing (Password "Password") [ fieldValidator emptyString "password" ]
               )
             ]
                 |> Dict.fromList
