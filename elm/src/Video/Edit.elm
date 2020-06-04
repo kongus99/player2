@@ -5,14 +5,13 @@ import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form as Form
 import Bootstrap.Modal as Modal
-import Html exposing (Html, div, text)
-import Http exposing (Error)
+import Html exposing (Html, text)
 import Json.Decode
 import Login.Form as Form exposing (resolveError)
 import RemoteData exposing (WebData)
 import Task
-import Video.Album as Album
-import Video.Video as Video exposing (VerifiedVideo, Video(..), VideoData, decodeData, decodeVerified, edit, persisted, unverified, verified)
+import Video.Album as Album exposing (Album)
+import Video.Video as Video exposing (VerifiedVideo, Video(..), VideoData, decodeVerified, edit, persisted, unverified, verified)
 
 
 type alias Model =
@@ -28,12 +27,13 @@ init =
 
 type Msg
     = Submit
-    | VerifyResponse (WebData ( Maybe Int, VerifiedVideo ))
-    | PersistResponse (WebData Int)
-    | AlbumSaveResponse (WebData Int)
-    | FetchResponse (WebData VideoData)
+    | VerifiedVideo (WebData ( Maybe Int, VerifiedVideo ))
+    | PersistedVideo (WebData Int)
+    | AlbumSaved Int (WebData Int)
+    | VideoFetched (WebData VideoData)
+    | AlbumFetched VideoData (WebData (Maybe Album))
     | Edit String String
-    | Open Video
+    | Open (Maybe Int)
     | Close
     | AlertMsg Alert.Msg
 
@@ -60,40 +60,50 @@ update msg model =
             ( model
             , case model.video of
                 Unverified v ->
-                    Form.get (\s -> "/api/verify?" ++ s) v (Form.expectJson VerifyResponse decodeVerified)
+                    Form.get (\s -> "/api/verify?" ++ s) v (Form.expectJson VerifiedVideo decodeVerified)
 
                 Verified v ->
-                    Form.post Video.url v (Form.expectJson PersistResponse Json.Decode.int)
+                    Form.post Video.url v (Form.expectJson PersistedVideo Json.Decode.int)
 
                 Persisted id v ->
-                    Form.post (Album.url id) v (Form.expectJson AlbumSaveResponse Json.Decode.int)
+                    Form.post (Album.url id) v (Form.expectJson (AlbumSaved id) Json.Decode.int)
             )
 
-        VerifyResponse response ->
+        VerifiedVideo response ->
             resolveResponse "Could not verify url."
                 (\r -> ( { model | video = verified r }, Alert.Success "Video successfully verified." |> showFeedback ))
                 response
 
-        PersistResponse response ->
+        PersistedVideo response ->
             resolveResponse "Could not save video."
-                (\id -> ( model, Cmd.batch [ Alert.Success "Video saved." |> showFeedback, Video.get id FetchResponse ] ))
+                (\videoId -> ( model, Cmd.batch [ Alert.Success "Video saved." |> showFeedback, Video.get videoId VideoFetched ] ))
                 response
 
-        AlbumSaveResponse response ->
+        AlbumSaved videoId response ->
             resolveResponse "Could not save album for this video"
-                (\id -> ( model, Cmd.batch [ Alert.Success "Album saved." |> showFeedback ] ))
+                (\_ -> ( model, Cmd.batch [ Alert.Success "Album saved." |> showFeedback, Video.get videoId VideoFetched ] ))
                 response
 
-        FetchResponse response ->
+        VideoFetched response ->
             resolveResponse "Error fetching video."
-                (\data -> ( { model | video = persisted data }, Cmd.none ))
+                (\data -> ( { model | visible = Modal.shown, video = persisted data Nothing }, Album.get data.id (AlbumFetched data) ))
+                response
+
+        AlbumFetched video response ->
+            resolveResponse "Error fetching album."
+                (\album -> ( { model | visible = Modal.shown, video = persisted video album }, Cmd.none ))
                 response
 
         Edit k v ->
             ( { model | video = edit ( k, v ) model.video }, Cmd.none )
 
-        Open video ->
-            ( { init | visible = Modal.shown, video = video }, Cmd.none )
+        Open mid ->
+            case mid of
+                Just id ->
+                    ( model, Video.get id VideoFetched )
+
+                Nothing ->
+                    ( { init | visible = Modal.shown, video = unverified }, Cmd.none )
 
         Close ->
             ( init, Cmd.none )
@@ -133,9 +143,9 @@ view mapper model =
 
 addButton : (Msg -> a) -> Html a
 addButton mapper =
-    Button.button [ Button.success, Button.onClick <| mapper <| Open unverified ] [ text "+" ]
+    Button.button [ Button.success, Button.onClick <| mapper <| Open Nothing ] [ text "+" ]
 
 
 editButton : VideoData -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
 editButton video mapper =
-    ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open <| persisted video ] [ text "Edit" ]
+    ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open <| Just video.id ] [ text "Edit" ]

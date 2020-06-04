@@ -29,7 +29,7 @@ port videoStatus : (( String, Float ) -> msg) -> Sub msg
 
 subscriptions : Sub Msg
 subscriptions =
-    Sub.batch [ videoStatus VideoStatus, Player.subscriptions |> Sub.map PlayerUpdate ]
+    Sub.batch [ videoStatus (\( s, f ) -> VideoStatus ( s, ceiling f )), Player.subscriptions |> Sub.map PlayerUpdate ]
 
 
 type alias Model =
@@ -81,7 +81,7 @@ singleVideo player login video =
 
 
 type Msg
-    = VideoStatus ( String, Float )
+    = VideoStatus ( String, Int )
     | PlayerUpdate Player.Msg
     | Select (Maybe VideoData)
     | Edit Edit.Msg

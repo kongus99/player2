@@ -4,7 +4,7 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder, int, list, nullable)
 import Json.Decode.Pipeline exposing (hardcoded, required)
-import Login.Form as Form exposing (Form, Type(..), emptyInput, fieldValidator, infoInput, serializableEmptyInput, serializableInfoInput)
+import Login.Form as Form exposing (Form, Type(..), disabled, editable, fieldValidator, withSerializer, withValue)
 import Regex
 import RemoteData exposing (WebData)
 import Set
@@ -12,7 +12,7 @@ import String exposing (fromInt)
 import Url exposing (Url)
 import Validation exposing (Validation)
 import Validator
-import Video.Album exposing (Album)
+import Video.Album as Album exposing (Album)
 
 
 type alias VideoData =
@@ -76,12 +76,13 @@ unverified =
     Unverified
         { fields =
             [ ( "videoUrl"
-              , serializableEmptyInput Nothing
+              , editable Nothing
                     (Form.Url "Video url")
                     [ fieldValidator Validator.url "videoUrl"
                     , fieldValidator videoIdValidator "videoUrl"
                     ]
-                    (\( _, v ) -> ( "videoId", parseId v.value ))
+                    |> withSerializer
+                        (\( _, v ) -> ( "videoId", parseId v.value ))
               )
             ]
                 |> Dict.fromList
@@ -94,16 +95,17 @@ verified : ( Maybe Int, VerifiedVideo ) -> Video
 verified ( mid, v ) =
     case mid of
         Just id ->
-            persisted (VideoData id v.title v.videoId Nothing)
+            persisted (VideoData id v.title v.videoId Nothing) Nothing
 
         Nothing ->
             Verified
                 { fields =
                     [ ( "title"
-                      , infoInput (Form.Label "title" "Title") v.title
+                      , disabled (Form.Label "title" "Title") v.title
                       )
                     , ( "videoId"
-                      , serializableInfoInput (Form.Label "videoId" "Url") ("https://www.youtube.com/watch?v=" ++ v.videoId) (\( _, f ) -> ( "videoId", parseId f.value ))
+                      , disabled (Form.Label "videoId" "Url") ("https://www.youtube.com/watch?v=" ++ v.videoId)
+                            |> withSerializer (\( _, f ) -> ( "videoId", parseId f.value ))
                       )
                     ]
                         |> Dict.fromList
@@ -112,18 +114,20 @@ verified ( mid, v ) =
                 }
 
 
-persisted : VideoData -> Video
-persisted v =
-    Persisted v.id
+persisted : VideoData -> Maybe Album -> Video
+persisted video album =
+    Persisted video.id
         { fields =
             [ ( "title"
-              , infoInput (Form.Label "title" "Title") v.title
+              , disabled (Form.Label "title" "Title") video.title
               )
             , ( "videoUrl"
-              , infoInput (Form.Label "videoUrl" "Url") ("https://www.youtube.com/watch?v=" ++ v.videoId)
+              , disabled (Form.Label "videoUrl" "Url") ("https://www.youtube.com/watch?v=" ++ video.videoId)
               )
             , ( "album"
-              , serializableEmptyInput (Form.Label "album" "Album" |> Just) (TextArea 20) [] (\( _, f ) -> ( "tracksString", f.value ))
+              , editable (Form.Label "album" "Album" |> Just) (TextArea 15) []
+                    |> withSerializer (\( _, f ) -> ( "tracksString", f.value ))
+                    |> (album |> Maybe.map (Album.toString >> withValue) |> Maybe.withDefault identity)
               )
             ]
                 |> Dict.fromList

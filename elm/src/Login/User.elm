@@ -4,7 +4,7 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
-import Login.Form as Form exposing (Field, Form, Type(..), emptyInput, fieldValidator)
+import Login.Form as Form exposing (Field, Form, Type(..), editable, fieldValidator)
 import RemoteData exposing (WebData)
 import Set
 import Validation exposing (Validation(..))
@@ -30,16 +30,16 @@ userCreation =
     Creation
         { fields =
             [ ( "username"
-              , emptyInput Nothing (Text "Username") [ fieldValidator username "username" ]
+              , editable Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "email"
-              , emptyInput Nothing (Email "Email") [ fieldValidator email "email" ]
+              , editable Nothing (Email "Email") [ fieldValidator email "email" ]
               )
             , ( "password"
-              , emptyInput Nothing (Password "Password") [ fieldValidator password "password" ]
+              , editable Nothing (Password "Password") [ fieldValidator password "password" ]
               )
             , ( "passwordRepeated"
-              , emptyInput Nothing (Password "Repeat password") [ validatePasswordsMatch ]
+              , editable Nothing (Password "Repeat password") [ validatePasswordsMatch ]
               )
             ]
                 |> Dict.fromList
@@ -53,10 +53,10 @@ userVerification =
     LoggingIn
         { fields =
             [ ( "username"
-              , emptyInput Nothing (Text "Username") [ fieldValidator username "username" ]
+              , editable Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "password"
-              , emptyInput Nothing (Password "Password") [ fieldValidator emptyString "password" ]
+              , editable Nothing (Password "Password") [ fieldValidator emptyString "password" ]
               )
             ]
                 |> Dict.fromList

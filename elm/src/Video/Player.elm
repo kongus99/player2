@@ -10,7 +10,7 @@ import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Json.Encode as Encode
-import Video.Album as Album exposing (Album, Track)
+import Video.Album as Album exposing (Album, Track, TrackTime, ending, isCurrentlyPlaying)
 import Video.Video exposing (Video, VideoData)
 
 
@@ -22,23 +22,19 @@ port changeTrack : Encode.Value -> Cmd msg
 
 subscriptions : Sub Msg
 subscriptions =
-    videoTime (\( start, end ) -> UpdateProgress { start = start, end = end })
-
-
-type alias Duration =
-    { start : Float, end : Float }
+    videoTime (\( now, length ) -> UpdateProgress { now = floor now, length = ceiling length })
 
 
 type Model
     = Unselected
     | Selected VideoData
-    | Playing Duration VideoData
+    | Playing TrackTime VideoData
 
 
 type Msg
-    = UpdateProgress Duration
-    | ToggleTrack Float
-    | VideoStarted Float
+    = UpdateProgress TrackTime
+    | ToggleTrack Int
+    | VideoStarted Int
 
 
 init : Model
@@ -64,25 +60,22 @@ getVideo model =
             Just v
 
 
-encodeStart : Float -> Encode.Value
+encodeStart : Int -> Encode.Value
 encodeStart start =
-    Encode.float start
+    Encode.int start
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case ( model, msg ) of
-        ( Playing _ video, UpdateProgress progress ) ->
+        ( Playing _ video, UpdateProgress trackTime ) ->
             let
-                isCorrectTrack ( start, { end } ) =
-                    progress.start >= start && progress.start < end
-
                 cmd =
                     video.album
-                        |> Maybe.andThen (Album.playing progress.start)
+                        |> Maybe.andThen (Album.playing trackTime)
                         |> Maybe.map
                             (\playing ->
-                                if isCorrectTrack playing then
+                                if isCurrentlyPlaying trackTime playing then
                                     Cmd.none
 
                                 else
@@ -90,16 +83,16 @@ update msg model =
                             )
                         |> Maybe.withDefault Cmd.none
             in
-            ( Playing progress video, cmd )
+            ( Playing trackTime video, cmd )
 
-        ( Playing progress video, ToggleTrack start ) ->
-            ( Playing progress { video | album = video.album |> Maybe.map (Album.toggle start) }, Cmd.none )
+        ( Playing trackTime video, ToggleTrack start ) ->
+            ( Playing trackTime { video | album = video.album |> Maybe.map (Album.toggle start) }, Cmd.none )
 
         ( Selected video, ToggleTrack start ) ->
             ( Selected { video | album = video.album |> Maybe.map (Album.toggle start) }, Cmd.none )
 
         ( Selected video, VideoStarted end ) ->
-            ( Playing (Duration 0 end) { video | album = Just (Album.mock end) }, Cmd.none )
+            ( Playing (TrackTime 0 end) { video | album = Nothing }, Cmd.none )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -118,13 +111,13 @@ isActive player id =
             video.id == id
 
 
-trackBars : Float -> Duration -> Album -> List (List (Progress.Option Msg))
-trackBars playingStart progress album =
+trackBars : Int -> TrackTime -> Album -> List (List (Progress.Option Msg))
+trackBars playingStart trackTime album =
     let
-        bar index ( start, { title, end } ) =
+        bar index ( start, track ) =
             let
                 length =
-                    (end - start) / progress.end * 100.0
+                    (toFloat (ending trackTime track) - toFloat start) / toFloat trackTime.length * 100.0
 
                 color =
                     if Album.active start album then
@@ -141,7 +134,7 @@ trackBars playingStart progress album =
                         Spacing.ml1
 
                 attrs =
-                    onClick (ToggleTrack start) :: spacing :: Extra.bottomTooltip title |> Progress.attrs
+                    onClick (ToggleTrack start) :: spacing :: Extra.bottomTooltip track.title |> Progress.attrs
             in
             if playingStart == start then
                 [ color, Progress.value length, Progress.animated, attrs ]
@@ -155,19 +148,19 @@ trackBars playingStart progress album =
 view : Model -> Html.Html Msg
 view model =
     let
-        playerCard progress video =
+        playerCard trackTime video =
             let
                 concat ( start, { title } ) =
                     ( start, " : " ++ title )
 
                 ( trackStart, trackTitle ) =
-                    Maybe.map2 (\p -> Album.playing p.start) progress video.album
+                    Maybe.map2 (\p -> Album.playing p) trackTime video.album
                         |> Maybe.andThen identity
                         |> Maybe.map concat
                         |> Maybe.withDefault ( 0, "" )
 
                 tracks =
-                    Maybe.map2 (trackBars trackStart) progress video.album |> Maybe.withDefault []
+                    Maybe.map2 (trackBars trackStart) trackTime video.album |> Maybe.withDefault []
             in
             Card.config [ Card.attrs [ style "width" "100%" ] ]
                 |> Card.block []
@@ -183,5 +176,5 @@ view model =
         Selected video ->
             playerCard Nothing video
 
-        Playing progress video ->
-            playerCard (Just progress) video
+        Playing trackTime video ->
+            playerCard (Just trackTime) video

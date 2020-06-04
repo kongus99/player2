@@ -13,7 +13,6 @@ import Json.Decode as Decode
 import Json.Encode as E
 import RemoteData exposing (WebData)
 import Set exposing (Set)
-import Url
 import Validation as Validation exposing (Validation(..))
 import Validator exposing (Validator)
 
@@ -58,40 +57,44 @@ type alias Form =
     }
 
 
-emptyInput : Maybe Label -> Type -> List (Validator Field) -> ValidatedField
-emptyInput label type_ validators =
-    serializableEmptyInput label type_ validators (\( k, v ) -> ( k, v.value ))
-
-
-serializableEmptyInput : Maybe Label -> Type -> List (Validator Field) -> Serializer -> ValidatedField
-serializableEmptyInput label type_ validators serializer =
+editable : Maybe Label -> Type -> List (Validator Field) -> ValidatedField
+editable label type_ validators =
     { field =
         { label = label
         , type_ = type_
         , disabled = False
         , value = ""
         }
-    , serializer = serializer
+    , serializer = \( k, v ) -> ( k, v.value )
     , validators = validators
     }
 
 
-infoInput : Label -> String -> ValidatedField
-infoInput label value =
-    serializableInfoInput label value (\( k, v ) -> ( k, v.value ))
-
-
-serializableInfoInput : Label -> String -> Serializer -> ValidatedField
-serializableInfoInput label value serializer =
+disabled : Label -> String -> ValidatedField
+disabled label value =
     { field =
         { label = Just label
         , type_ = Text ""
         , disabled = True
         , value = value
         }
-    , serializer = serializer
+    , serializer = \( k, v ) -> ( k, v.value )
     , validators = []
     }
+
+
+withSerializer : Serializer -> ValidatedField -> ValidatedField
+withSerializer serializer field =
+    { field | serializer = serializer }
+
+
+withValue : String -> ValidatedField -> ValidatedField
+withValue value valField =
+    let
+        oldField =
+            valField.field
+    in
+    { valField | field = { oldField | value = value } }
 
 
 fieldValidator : (String -> Validation) -> String -> Validator Field
@@ -202,10 +205,19 @@ resolveError responses err =
                             Nothing
                     )
                 |> List.head
-                |> Maybe.withDefault ("Server status " ++ String.fromInt status ++ " error.")
+                |> Maybe.withDefault ("Server status " ++ String.fromInt status ++ " error")
 
-        _ ->
-            "Server error."
+        Http.BadUrl string ->
+            "Bad url " ++ string
+
+        Http.Timeout ->
+            "Timeout error"
+
+        Http.NetworkError ->
+            "Network error"
+
+        Http.BadBody string ->
+            "Bad body " ++ string
 
 
 view : (String -> String -> msg) -> Form -> List (List (Html msg))
