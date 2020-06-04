@@ -1,6 +1,7 @@
 package common
 
 import java.net.URLDecoder
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.regex.Pattern.compile
 import javax.validation.*
@@ -51,10 +52,10 @@ object Album {
             compile("^(?:(?:([01]?\\d|2[0-3]):)?([0-5]?\\d):)?([0-5]?\\d)[_\\-\\s]+(\\S.*)\$")!!
 
 
-    data class AlbumToCreate(val tracksString: String) {
+    data class AlbumToCreate(val tracksString: Charset) {
         @get:TracksValid
         @Valid
-        val tracks: List<Track> = parse(URLDecoder.decode(tracksString, UTF_8))
+        val tracks: List<Track> = parse(URLDecoder.decode(tracksString.toString(), UTF_8))
 
         private fun parse(s: String): List<Track> {
             val starts = s.lines().mapNotNull { line ->
