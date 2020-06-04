@@ -50,9 +50,10 @@ decodeTrack =
 
 decodeAlbum : Decoder Album
 decodeAlbum =
-    Decode.succeed Album
-        |> hardcoded Set.empty
-        |> required "tracks" (Decode.list decodeTrack |> Decode.map Dict.fromList)
+    Decode.field "tracks"
+        (Decode.list decodeTrack
+            |> Decode.map (\l -> Album (l |> List.map Tuple.first |> Set.fromList) (Dict.fromList l))
+        )
 
 
 toString : Album -> String

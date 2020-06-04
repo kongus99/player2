@@ -10,7 +10,9 @@ import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Json.Encode as Encode
+import RemoteData exposing (WebData)
 import Video.Album as Album exposing (Album, Track, TrackTime, ending, isCurrentlyPlaying)
+import Video.Options as Options exposing (Options)
 import Video.Video exposing (Video, VideoData)
 
 
@@ -20,44 +22,41 @@ port videoTime : (( Float, Float ) -> msg) -> Sub msg
 port changeTrack : Encode.Value -> Cmd msg
 
 
+port sendUrlWithOptions : Encode.Value -> Cmd msg
+
+
 subscriptions : Sub Msg
 subscriptions =
     videoTime (\( now, length ) -> UpdateProgress { now = floor now, length = ceiling length })
 
 
-type Model
-    = Unselected
-    | Selected VideoData
-    | Playing TrackTime VideoData
+type alias Selection =
+    { video : VideoData
+    , album : Maybe Album
+    , trackTime : Maybe TrackTime
+    }
+
+
+type alias Model =
+    Maybe Selection
 
 
 type Msg
-    = UpdateProgress TrackTime
+    = SelectVideo (Maybe VideoData) Options
+    | UpdateProgress TrackTime
     | ToggleTrack Int
+    | AlbumFetched (WebData (Maybe Album))
     | VideoStarted Int
 
 
 init : Model
 init =
-    Unselected
-
-
-select : Maybe VideoData -> Model
-select =
-    Maybe.map Selected >> Maybe.withDefault Unselected
+    Nothing
 
 
 getVideo : Model -> Maybe VideoData
-getVideo model =
-    case model of
-        Unselected ->
-            Nothing
-
-        Selected v ->
-            Just v
-
-        Playing _ v ->
-            Just v
+getVideo =
+    Maybe.map .video
 
 
 encodeStart : Int -> Encode.Value
@@ -65,13 +64,27 @@ encodeStart start =
     Encode.int start
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( model, msg ) of
-        ( Playing _ video, UpdateProgress trackTime ) ->
+    case ( msg, model ) of
+        ( SelectVideo video options, _ ) ->
+            video
+                |> Maybe.map
+                    (\v ->
+                        ( Just (Selection v Nothing Nothing)
+                        , [ Options.encodeWithUrl v options
+                                |> sendUrlWithOptions
+                          , Album.get v.id AlbumFetched
+                          ]
+                            |> Cmd.batch
+                        )
+                    )
+                |> Maybe.withDefault ( model, Cmd.none )
+
+        ( UpdateProgress trackTime, Just selection ) ->
             let
                 cmd =
-                    video.album
+                    selection.album
                         |> Maybe.andThen (Album.playing trackTime)
                         |> Maybe.map
                             (\playing ->
@@ -83,32 +96,33 @@ update msg model =
                             )
                         |> Maybe.withDefault Cmd.none
             in
-            ( Playing trackTime video, cmd )
+            ( Just <| { selection | trackTime = Just trackTime }, cmd )
 
-        ( Playing trackTime video, ToggleTrack start ) ->
-            ( Playing trackTime { video | album = video.album |> Maybe.map (Album.toggle start) }, Cmd.none )
+        ( ToggleTrack start, Just selection ) ->
+            ( Just <| { selection | album = selection.album |> Maybe.map (Album.toggle start) }, Cmd.none )
 
-        ( Selected video, ToggleTrack start ) ->
-            ( Selected { video | album = video.album |> Maybe.map (Album.toggle start) }, Cmd.none )
+        ( VideoStarted end, Just selection ) ->
+            ( Just <| { selection | trackTime = Just <| TrackTime 0 end }, Cmd.none )
 
-        ( Selected video, VideoStarted end ) ->
-            ( Playing (TrackTime 0 end) { video | album = Nothing }, Cmd.none )
+        ( AlbumFetched response, Just selection ) ->
+            let
+                album =
+                    case response of
+                        RemoteData.Success v ->
+                            v
 
-        ( _, _ ) ->
+                        _ ->
+                            Nothing
+            in
+            ( Just <| { selection | album = album }, Cmd.none )
+
+        ( _, Nothing ) ->
             ( model, Cmd.none )
 
 
 isActive : Model -> Int -> Bool
 isActive player id =
-    case player of
-        Unselected ->
-            False
-
-        Selected video ->
-            video.id == id
-
-        Playing _ video ->
-            video.id == id
+    player |> Maybe.map (\m -> m.video.id == id) |> Maybe.withDefault False
 
 
 trackBars : Int -> TrackTime -> Album -> List (List (Progress.Option Msg))
@@ -148,19 +162,19 @@ trackBars playingStart trackTime album =
 view : Model -> Html.Html Msg
 view model =
     let
-        playerCard trackTime video =
+        playerCard { trackTime, video, album } =
             let
                 concat ( start, { title } ) =
                     ( start, " : " ++ title )
 
                 ( trackStart, trackTitle ) =
-                    Maybe.map2 (\p -> Album.playing p) trackTime video.album
+                    Maybe.map2 (\p -> Album.playing p) trackTime album
                         |> Maybe.andThen identity
                         |> Maybe.map concat
                         |> Maybe.withDefault ( 0, "" )
 
                 tracks =
-                    Maybe.map2 (trackBars trackStart) trackTime video.album |> Maybe.withDefault []
+                    Maybe.map2 (trackBars trackStart) trackTime album |> Maybe.withDefault []
             in
             Card.config [ Card.attrs [ style "width" "100%" ] ]
                 |> Card.block []
@@ -169,12 +183,4 @@ view model =
                     ]
                 |> Card.view
     in
-    case model of
-        Unselected ->
-            div [] []
-
-        Selected video ->
-            playerCard Nothing video
-
-        Playing trackTime video ->
-            playerCard (Just trackTime) video
+    Maybe.map playerCard model |> Maybe.withDefault (div [] [])

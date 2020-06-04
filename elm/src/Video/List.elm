@@ -21,9 +21,6 @@ import Video.Player as Player exposing (Msg(..))
 import Video.Video as Video exposing (Video, VideoData)
 
 
-port sendUrlWithOptions : Encode.Value -> Cmd msg
-
-
 port videoStatus : (( String, Float ) -> msg) -> Sub msg
 
 
@@ -102,11 +99,7 @@ update filter options msg model =
             ( { model | originalVideos = [], filteredVideos = [] }, Video.getAll Fetched )
 
         Select video ->
-            ( { model | player = Player.select video }
-            , video
-                |> Maybe.map (\v -> Options.encodeWithUrl v options |> sendUrlWithOptions)
-                |> Maybe.withDefault Cmd.none
-            )
+            update filter options (PlayerUpdate (SelectVideo video options)) model
 
         Edit m ->
             let
