@@ -39,7 +39,12 @@ class AlbumController {
                 ?.where(Tables.USER.NAME.eq(principal))
                 ?.first()!!.id
         return dsl.insertInto(AlbumTable.ALBUM, AlbumTable.ALBUM.VIDEOID, AlbumTable.ALBUM.USERID, AlbumTable.ALBUM.TRACKS)
-                ?.values(videoId, userId, album.saveTracks)?.returning()
+                ?.values(videoId, userId, album.saveTracks)
+                ?.onConflict(AlbumTable.ALBUM.VIDEOID)
+                ?.doUpdate()
+                ?.set(AlbumTable.ALBUM.TRACKS, album.saveTracks)
+                ?.set(AlbumTable.ALBUM.USERID, userId)
+                ?.returning()
                 ?.fetchOne()!!.id
     }
 }

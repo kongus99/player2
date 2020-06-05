@@ -42,8 +42,7 @@ object Album {
                     { list: List<OrderedTrack> ->
                         list.size == list.map { it.title.trim() }.toSet().size
                     }
-            return tracks.isNotEmpty()
-                    && uniqueNames(tracks)
+            return uniqueNames(tracks)
                     && isSorted(tracks)
                     && startsWithZero(tracks)
         }
@@ -86,7 +85,7 @@ object Album {
             val x = when {
                 tracks.isEmpty() -> listOf()
                 tracks.size == 1 -> listOf(tracks[0].track(null))
-                else -> tracks.zipWithNext().map { it.first.track(it.second) }
+                else -> tracks.zipWithNext().map { it.first.track(it.second) }.plus(tracks.last().track(null))
             }
             ObjectMapper().writeValueAsString(x)
         }
