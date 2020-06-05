@@ -50,7 +50,7 @@ object Album {
     }
 
     data class OrderedTrack(val start: Int,
-                            @get:Pattern(regexp = "^\\w{3,50}.*$",
+                            @get:Pattern(regexp = "^\\w{1,50}.*$",
                                     message = "Lower and upper case letters, numbers, - and _, min 3 and max 50 chars.")
                             val title: String) {
         fun track(next: OrderedTrack?): Track =
