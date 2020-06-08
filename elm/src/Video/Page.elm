@@ -10,9 +10,10 @@ import Json.Encode as Encode
 import Login.Login as Login exposing (Msg(..))
 import Login.User as User
 import TextFilter exposing (TextFilter)
-import Video.Edit as Edit
+import Video.Edit as Edit exposing (isClosing)
 import Video.List as List exposing (Msg(..))
 import Video.Options as Options exposing (Option(..), Options)
+import Video.Video as Video
 
 
 port sendOptions : Encode.Value -> Cmd msg
@@ -116,8 +117,15 @@ update msg model =
             let
                 ( newModel, cmd ) =
                     Edit.update m model.add
+
+                onClose =
+                    if isClosing m then
+                        Video.getAll (ListMsg << Fetched)
+
+                    else
+                        Cmd.none
             in
-            ( { model | add = newModel }, Cmd.map Add cmd )
+            ( { model | add = newModel }, Cmd.batch [ Cmd.map Add cmd, onClose ] )
 
         LoginMsg m ->
             let

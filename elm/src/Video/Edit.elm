@@ -38,6 +38,16 @@ type Msg
     | AlertMsg Alert.Msg
 
 
+isClosing : Msg -> Bool
+isClosing msg =
+    case msg of
+        Close ->
+            True
+
+        _ ->
+            False
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
