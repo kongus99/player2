@@ -1,5 +1,7 @@
 port module Video.Player exposing (..)
 
+import Bootstrap.Button as Button
+import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Card as Card
 import Bootstrap.Card.Block as Block
 import Bootstrap.Progress as Progress
@@ -34,6 +36,7 @@ type alias Selection =
     { video : VideoData
     , album : Maybe Album
     , trackTime : Maybe TrackTime
+    , include : Bool
     }
 
 
@@ -42,7 +45,8 @@ type alias Model =
 
 
 type Msg
-    = SelectVideo (Maybe VideoData) Options
+    = ToggleAll Bool
+    | SelectVideo (Maybe VideoData) Options
     | UpdateProgress TrackTime
     | ToggleTrack Int
     | AlbumFetched (WebData (Maybe Album))
@@ -71,7 +75,7 @@ update msg model =
             video
                 |> Maybe.map
                     (\v ->
-                        ( Just (Selection v Nothing Nothing)
+                        ( Just (Selection v Nothing Nothing True)
                         , [ Options.encodeWithUrl v options
                                 |> sendUrlWithOptions
                           , Album.get v.id AlbumFetched
@@ -80,6 +84,9 @@ update msg model =
                         )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
+
+        ( ToggleAll include, Just selection ) ->
+            ( Just <| { selection | album = selection.album |> Maybe.map (Album.toggleAll include), include = not include }, Cmd.none )
 
         ( UpdateProgress trackTime, Just selection ) ->
             let
@@ -162,7 +169,7 @@ trackBars playingStart trackTime album =
 view : Model -> Html.Html Msg
 view model =
     let
-        playerCard { trackTime, video, album } =
+        playerCard { trackTime, video, album, include } =
             let
                 concat ( start, { title } ) =
                     ( start, " : " ++ title )
@@ -174,13 +181,19 @@ view model =
                         |> Maybe.withDefault ( 0, "" )
 
                 tracks =
-                    Maybe.map2 (trackBars trackStart) trackTime album |> Maybe.withDefault []
+                    Maybe.map2 (trackBars trackStart) trackTime album
+
+                extraBlocks =
+                    [ tracks |> Maybe.map Progress.progressMulti |> Maybe.withDefault (div [] []) |> Block.custom
+                    , Block.custom <|
+                        ButtonGroup.buttonGroup []
+                            [ ButtonGroup.button [ Button.info, Button.small, Button.onClick <| ToggleAll include ] [ text "Toggle" ]
+                            ]
+                    ]
             in
             Card.config [ Card.attrs [ style "width" "100%" ] ]
                 |> Card.block []
-                    [ Block.titleH4 [] [ text <| video.title ++ trackTitle ]
-                    , Block.custom <| Progress.progressMulti <| tracks
-                    ]
+                    (Block.titleH4 [] [ text <| video.title ++ trackTitle ] :: extraBlocks)
                 |> Card.view
     in
     Maybe.map playerCard model |> Maybe.withDefault (div [] [])

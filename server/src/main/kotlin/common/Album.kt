@@ -38,8 +38,12 @@ object Album {
                                 .map { it.first.start < it.second.start }
                                 .fold(true, { x, y -> x && y })
                     }
-
-            return isSorted(tracks)
+            val uniqueTimes =
+                    { list: List<OrderedTrack> ->
+                        list.size == list.map { it.start }.toSet().size
+                    }
+            return uniqueTimes(tracks)
+                    && isSorted(tracks)
                     && startsWithZero(tracks)
         }
 

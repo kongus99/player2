@@ -85,6 +85,15 @@ toggle start album =
         { album | selected = Set.insert start album.selected }
 
 
+toggleAll : Bool -> Album -> Album
+toggleAll include album =
+    if include then
+        { album | selected = album.tracks |> Dict.toList |> List.map Tuple.first |> Set.fromList }
+
+    else
+        { album | selected = Set.empty }
+
+
 find : Album -> Int -> Maybe ( Int, Track )
 find album start =
     Dict.get start album.tracks |> Maybe.map (\t -> ( start, t ))

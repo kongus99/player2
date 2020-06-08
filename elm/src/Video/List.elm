@@ -10,7 +10,6 @@ import Extra exposing (resolveFetch)
 import Html exposing (..)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
-import Json.Encode as Encode
 import Login.Login as Login
 import RemoteData exposing (RemoteData(..), WebData)
 import TextFilter exposing (TextFilter)
