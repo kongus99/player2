@@ -108,7 +108,7 @@ update msg model =
             in
             ( { model
                 | filter = filter
-                , list = List.filterList filter model.list
+                , list = model.list --FIXME
               }
             , Cmd.none
             )

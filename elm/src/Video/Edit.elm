@@ -156,6 +156,6 @@ addButton mapper =
     Button.button [ Button.success, Button.onClick <| mapper <| Open Nothing ] [ text "+" ]
 
 
-editButton : VideoData -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
-editButton video mapper =
-    ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open <| Just video.id ] [ text "Edit" ]
+editButton : Maybe Int -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
+editButton mid mapper =
+    ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open mid ] [ text "Edit" ]

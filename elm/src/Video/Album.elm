@@ -3,19 +3,29 @@ module Video.Album exposing (..)
 import Dict exposing (Dict)
 import Http
 import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (hardcoded, required)
+import Json.Decode.Pipeline exposing (required)
 import RemoteData exposing (WebData)
 import Set exposing (Set)
-import String exposing (fromInt)
+import String
 
 
 type alias TrackTime =
-    { now : Int, length : Int }
+    { now : Int
+    , length : Int
+    }
 
 
 type alias Track =
     { title : String
     , end : Maybe Int
+    }
+
+
+type alias TrackData =
+    { start : Int
+    , end : Int
+    , isActive : Bool
+    , title : String
     }
 
 
@@ -121,12 +131,24 @@ ending trackTime track =
     track.end |> Maybe.withDefault trackTime.length
 
 
-isCurrentlyPlaying : TrackTime -> ( Int, Track ) -> Bool
-isCurrentlyPlaying trackTime ( start, track ) =
-    trackTime.now >= start && trackTime.now < ending trackTime track
+isCurrentlyPlaying : TrackTime -> TrackData -> Bool
+isCurrentlyPlaying { now } { start, end } =
+    now >= start && now < end
 
 
-playing : TrackTime -> Album -> Maybe ( Int, Track )
+trackData trackTime album ( start, track ) =
+    TrackData start
+        (track.end |> Maybe.withDefault trackTime.length)
+        (album.selected |> Set.member start)
+        track.title
+
+
+tracksData : Album -> TrackTime -> List TrackData
+tracksData album trackTime =
+    album.tracks |> Dict.toList |> List.map (trackData trackTime album)
+
+
+playing : TrackTime -> Album -> Maybe TrackData
 playing trackTime album =
     (case album.selected |> Set.partition (\s -> s < trackTime.now) |> Tuple.mapBoth Set.toList Set.toList of
         ( [], [] ) ->
@@ -179,3 +201,4 @@ playing trackTime album =
                 maybeNext
     )
         |> Maybe.andThen (find album)
+        |> Maybe.map (trackData trackTime album)

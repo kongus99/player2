@@ -159,12 +159,12 @@ getAll msg =
         }
 
 
-delete : c -> VideoData -> Cmd c
-delete msg video =
+delete : c -> Int -> Cmd c
+delete msg id =
     Http.request
         { method = "DELETE"
         , headers = []
-        , url = url ++ "/" ++ String.fromInt video.id
+        , url = url ++ "/" ++ String.fromInt id
         , body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> (\_ -> msg)) (nullable int)
         , timeout = Nothing
