@@ -1,1 +1,1 @@
-ReactDOMRe.renderToElementWithId(<Video />, "app");
+ReactDOMRe.renderToElementWithId(<Video.Player />, "app");
