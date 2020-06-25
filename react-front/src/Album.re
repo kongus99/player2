@@ -50,38 +50,37 @@ let make = (~id: int) => {
     },
     [|id|],
   );
-  Bootstrap.(
-    {
-      switch (state) {
-      | Loading => React.string("Loading")
-      | ErrorLoading => React.string("Error")
-      | Loaded(title, album) =>
-        <Card>
-          <Accordion.Toggle _as=Card.header eventKey="1">
-            {React.string("Tracks")}
-          </Accordion.Toggle>
-          <Accordion.Collapse eventKey="1">
-            <Card.Body>
-              <ListGroup>
-                {album.tracks
-                 |> Array.map(t => {
-                      <ListGroup.Item
-                        key={t.title}
-                        action=true
-                        active={Some(t.title) == title}
-                        onClick={_ =>
-                          setState(_ => Loaded(Some(t.title), album))
-                        }>
-                        {ReasonReact.string(t.title)}
-                      </ListGroup.Item>
-                    })
-                 |> React.array}
-              </ListGroup>
-            </Card.Body>
-          </Accordion.Collapse>
-        </Card>
-      | NotFound => <div />
-      };
-    }
-  );
+
+  switch (state) {
+  | Loading => React.string("Loading")
+  | ErrorLoading => React.string("Error")
+  | Loaded(title, album) =>
+    Bootstrap.(
+      <Card>
+        <Accordion.Toggle _as=Card.header eventKey="1">
+          {React.string("Tracks")}
+        </Accordion.Toggle>
+        <Accordion.Collapse eventKey="1">
+          <Card.Body>
+            <ListGroup>
+              {album.tracks
+               |> Array.map(t => {
+                    <ListGroup.Item
+                      key={t.title}
+                      action=true
+                      active={Some(t.title) == title}
+                      onClick={_ =>
+                        setState(_ => Loaded(Some(t.title), album))
+                      }>
+                      {ReasonReact.string(t.title)}
+                    </ListGroup.Item>
+                  })
+               |> React.array}
+            </ListGroup>
+          </Card.Body>
+        </Accordion.Collapse>
+      </Card>
+    )
+  | NotFound => <div />
+  };
 };

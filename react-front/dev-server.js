@@ -4,7 +4,7 @@ const express = require('express');
 
 
 const bundler = new Bundler('index.html', {
-    cache: false,
+    cache: true,
     outDir: './lib',
 });
 

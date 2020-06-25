@@ -67,34 +67,45 @@ module Player = {
       );
       None;
     });
+    let renderPlayer = (id, videos) =>
+      Belt.Array.getBy(videos, e => e.id == id)
+      |> Belt_Option.map(_, v => <Player videoId={v.videoId} />)
+      |> Belt_Option.getWithDefault(_, <div />);
+
     Bootstrap.(
-      <Accordion>
-        <Card>
-          <Accordion.Toggle _as=Card.header eventKey="0">
-            {React.string("Playlist")}
-          </Accordion.Toggle>
-          <Accordion.Collapse eventKey="0">
-            <Card.Body>
-              {switch (state) {
-               | Loading => React.string("Loading")
-               | ErrorLoading => React.string("Error")
-               | Loaded(id, videos) =>
-                 <VideoList
-                   id
-                   videos
-                   onClick={(i, _) =>
-                     setState(_ => Loaded(Some(i), videos))
-                   }
-                 />
-               }}
-            </Card.Body>
-          </Accordion.Collapse>
-        </Card>
+      <div>
         {switch (state) {
-         | Loaded(Some(id), _) => <Album id />
+         | Loaded(Some(id), videos) => renderPlayer(id, videos)
          | _ => <div />
          }}
-      </Accordion>
+        <Accordion>
+          <Card>
+            <Accordion.Toggle _as=Card.header eventKey="0">
+              {React.string("Playlist")}
+            </Accordion.Toggle>
+            <Accordion.Collapse eventKey="0">
+              <Card.Body>
+                {switch (state) {
+                 | Loading => React.string("Loading")
+                 | ErrorLoading => React.string("Error")
+                 | Loaded(id, videos) =>
+                   <VideoList
+                     id
+                     videos
+                     onClick={(i, _) =>
+                       setState(_ => Loaded(Some(i), videos))
+                     }
+                   />
+                 }}
+              </Card.Body>
+            </Accordion.Collapse>
+          </Card>
+          {switch (state) {
+           | Loaded(Some(id), _) => <Album id />
+           | _ => <div />
+           }}
+        </Accordion>
+      </div>
     );
   };
 };
