@@ -14,9 +14,13 @@ type videoJSOptions = {
   youtube,
 };
 
-type player = {on: (string, unit => unit) => unit};
+type playerOptions = {
+  loop: bool,
+  play: bool,
+  playlist: bool,
+};
 
-let playerOptions = src => {
+let initialPlayerOptions = src => {
   {
     controls: true,
     width: 480,
@@ -39,17 +43,15 @@ external vids:
 
 Js.log(ytVids);
 
-let getPlayer = () => {
+let callOnPlayer = f => {
   let playerNode = document##querySelector("#mainPlayer>.video-js");
   if (playerNode != Js.Nullable.null) {
-    Some(playerNode##player);
-  } else {
-    None;
+    f(playerNode##player);
   };
 };
 
 let createPlayer = (videoId, setCurrentTime) => {
-  Belt_Option.forEach(getPlayer(), p => p##dispose());
+  callOnPlayer(p => p##dispose());
   let container = document##getElementById("mainPlayer");
   let playerNode = document##createElement("video");
   playerNode##className #= "video-js vjs-default-skin sticky-top";
@@ -58,22 +60,43 @@ let createPlayer = (videoId, setCurrentTime) => {
   let player =
     vids(
       ~_ref=reference,
-      ~options=playerOptions("https://www.youtube.com/watch?v=" ++ videoId),
+      ~options=
+        initialPlayerOptions("https://www.youtube.com/watch?v=" ++ videoId),
     );
   let () =
     player##on("timeupdate", () => {setCurrentTime(player##currentTime())});
   ();
 };
 
+let applyOptions = (playerOptions, onVideoEnd) => {
+  callOnPlayer(p => {
+    p##loop(playerOptions.loop);
+    if (playerOptions.play) {
+      p##play();
+    };
+    p##off("ended");
+    p##on("ended", _ => onVideoEnd());
+  });
+};
+
 [@react.component]
-let make = (~videoId: string) => {
+let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
   let (currentTime, setCurrentTime) = React.useState(() => 0);
   React.useEffect1(
     () => {
       createPlayer(videoId, setCurrentTime);
-      Some(() => {Belt_Option.forEach(getPlayer(), p => p##dispose())});
+      applyOptions(playerOptions, onVideoEnd);
+      Some(() => callOnPlayer(p => p##dispose()));
     },
     [|videoId|],
+  );
+
+  React.useEffect1(
+    () => {
+      applyOptions(playerOptions, onVideoEnd);
+      None;
+    },
+    [|playerOptions|],
   );
 
   <div id="mainPlayer">

@@ -49,6 +49,8 @@ module Player = {
   [@react.component]
   let make = () => {
     let (state, setState) = React.useState(() => Loading);
+    let (playerOptions, setPlayerOptions) =
+      React.useState(() => Player.{play: true, playlist: true, loop: false});
     React.useEffect0(() => {
       Js.Promise.(
         fetch("/api/video")
@@ -67,9 +69,47 @@ module Player = {
       );
       None;
     });
+
+    let nextVideoId = (~cyclic=false, id, videos) => {
+      Belt_Array.getIndexBy(videos, e => e.id == id)
+      |> Belt_Option.flatMap(
+           _,
+           i => {
+             let index =
+               if (cyclic) {
+                 (i + 1) mod Belt_Array.length(videos);
+               } else {
+                 i + 1;
+               };
+             Belt_Array.get(videos, index) |> Belt_Option.map(_, v => v.id);
+           },
+         );
+    };
+
     let renderPlayer = (id, videos) =>
       Belt.Array.getBy(videos, e => e.id == id)
-      |> Belt_Option.map(_, v => <Player videoId={v.videoId} />)
+      |> Belt_Option.map(_, v =>
+           <Player
+             videoId={v.videoId}
+             playerOptions
+             onVideoEnd={() =>
+               setState(s =>
+                 switch (s) {
+                 | Loaded(Some(id), videos) =>
+                   Loaded(
+                     nextVideoId(
+                       ~cyclic=playerOptions.playlist && playerOptions.loop,
+                       id,
+                       videos,
+                     ),
+                     videos,
+                   )
+                 | x => x
+                 }
+               )
+             }
+           />
+         )
       |> Belt_Option.getWithDefault(_, <div />);
 
     Bootstrap.(
