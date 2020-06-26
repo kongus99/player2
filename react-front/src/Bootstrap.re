@@ -1,6 +1,31 @@
 module Button = {
   [@bs.module "react-bootstrap/Button"] [@react.component]
-  external make: (~_type: string, ~children: React.element=?) => React.element =
+  external make:
+    (~variant: string=?, ~children: React.element=?) => React.element =
+    "default";
+};
+
+module ButtonGroup = {
+  [@bs.module "react-bootstrap/ButtonGroup"] [@react.component]
+  external make:
+    (~toggle: bool=?, ~className: string=?, ~children: React.element=?) =>
+    React.element =
+    "default";
+};
+
+module ToggleButton = {
+  [@bs.module "react-bootstrap/ToggleButton"] [@react.component]
+  external make:
+    (
+      ~checked: bool=?,
+      ~disabled: bool=?,
+      ~_type: string=?,
+      ~size: string=?,
+      ~value: 'a=?,
+      ~onChange: ReactEvent.Form.t => unit=?,
+      ~children: React.element=?
+    ) =>
+    React.element =
     "default";
 };
 

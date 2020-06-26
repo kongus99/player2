@@ -45,6 +45,22 @@ module VideoList = {
   };
 };
 
+let nextVideoId = (Player.{playlist, loop}, id, videos) => {
+  let find = cyclic =>
+    videos
+    ->Belt_Array.getIndexBy(e => e.id == id)
+    ->Belt_Option.flatMap(i => {
+        let index =
+          if (cyclic) {
+            (i + 1) mod Belt_Array.length(videos);
+          } else {
+            i + 1;
+          };
+        Belt_Array.get(videos, index)->Belt_Option.map(v => v.id);
+      });
+  playlist ? find(loop) : Some(id);
+};
+
 module Player = {
   [@react.component]
   let make = () => {
@@ -70,22 +86,6 @@ module Player = {
       None;
     });
 
-    let nextVideoId = (~cyclic=false, id, videos) => {
-      Belt_Array.getIndexBy(videos, e => e.id == id)
-      |> Belt_Option.flatMap(
-           _,
-           i => {
-             let index =
-               if (cyclic) {
-                 (i + 1) mod Belt_Array.length(videos);
-               } else {
-                 i + 1;
-               };
-             Belt_Array.get(videos, index) |> Belt_Option.map(_, v => v.id);
-           },
-         );
-    };
-
     let renderPlayer = (id, videos) =>
       Belt.Array.getBy(videos, e => e.id == id)
       |> Belt_Option.map(_, v =>
@@ -96,14 +96,7 @@ module Player = {
                setState(s =>
                  switch (s) {
                  | Loaded(Some(id), videos) =>
-                   Loaded(
-                     nextVideoId(
-                       ~cyclic=playerOptions.playlist && playerOptions.loop,
-                       id,
-                       videos,
-                     ),
-                     videos,
-                   )
+                   Loaded(nextVideoId(playerOptions, id, videos), videos)
                  | x => x
                  }
                )
@@ -118,6 +111,41 @@ module Player = {
          | Loaded(Some(id), videos) => renderPlayer(id, videos)
          | _ => <div />
          }}
+        <ButtonGroup toggle=true>
+          <ToggleButton
+            _type="checkbox"
+            checked={playerOptions.play}
+            size="sm"
+            onChange={e =>
+              setPlayerOptions(o =>
+                {...o, play: ReactEvent.Form.currentTarget(e)##checked}
+              )
+            }>
+            {React.string("Autoplay")}
+          </ToggleButton>
+          <ToggleButton
+            _type="checkbox"
+            checked={playerOptions.loop}
+            size="sm"
+            onChange={e =>
+              setPlayerOptions(o =>
+                {...o, loop: ReactEvent.Form.currentTarget(e)##checked}
+              )
+            }>
+            {React.string("Loop")}
+          </ToggleButton>
+          <ToggleButton
+            _type="checkbox"
+            checked={playerOptions.playlist}
+            size="sm"
+            onChange={e =>
+              setPlayerOptions(o =>
+                {...o, playlist: ReactEvent.Form.currentTarget(e)##checked}
+              )
+            }>
+            {React.string("Playlist")}
+          </ToggleButton>
+        </ButtonGroup>
         <Accordion>
           <Card>
             <Accordion.Toggle _as=Card.header eventKey="0">
