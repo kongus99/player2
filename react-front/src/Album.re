@@ -1,5 +1,3 @@
-[@bs.val] external fetch: string => Js.Promise.t('a) = "fetch";
-
 type track = {
   title: string,
   _end: option(int),
@@ -29,8 +27,8 @@ let make = (~id: int) => {
   React.useEffect1(
     () => {
       Js.Promise.(
-        fetch("/api/video/" ++ string_of_int(id) ++ "/album")
-        |> then_(response => response##json())
+        Fetch.fetch("/api/video/" ++ string_of_int(id) ++ "/album")
+        |> then_(Fetch.Response.json)
         |> then_(jsonResponse => {
              setState(_previousState => {
                let album = jsonResponse |> Json.Decode.optional(Decode.album);

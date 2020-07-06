@@ -1,5 +1,3 @@
-[@bs.val] external fetch: string => Js.Promise.t('a) = "fetch";
-
 type video = {
   id: int,
   title: string,
@@ -69,8 +67,8 @@ module Player = {
       React.useState(() => Player.{play: true, playlist: true, loop: false});
     React.useEffect0(() => {
       Js.Promise.(
-        fetch("/api/video")
-        |> then_(response => response##json())
+        Fetch.fetch("/api/video")
+        |> then_(Fetch.Response.json)
         |> then_(jsonResponse => {
              setState(_previousState =>
                Loaded(None, jsonResponse |> Json.Decode.array(Decode.video))
@@ -107,6 +105,7 @@ module Player = {
 
     Bootstrap.(
       <div>
+        <Login />
         {switch (state) {
          | Loaded(Some(id), videos) => renderPlayer(id, videos)
          | _ => <div />
