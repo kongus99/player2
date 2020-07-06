@@ -105,7 +105,7 @@ module Player = {
 
     Bootstrap.(
       <div>
-        <Login />
+        <Authorize />
         {switch (state) {
          | Loaded(Some(id), videos) => renderPlayer(id, videos)
          | _ => <div />
