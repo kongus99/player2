@@ -1,6 +1,6 @@
 exception Unknown_Status;
 
-let post = (url, content, onStatus, onSuccess) =>
+let post = (url, content, onStatus, ~onError=Js.log, onSuccess) =>
   Js.Promise.(
     Fetch.fetchWithInit(
       url,
@@ -19,18 +19,18 @@ let post = (url, content, onStatus, onSuccess) =>
            );
          statusResolver(response);
        })
-    |> then_(json => {
-         onSuccess(json);
+    |> then_(value => {
+         onSuccess(value);
          Js.Promise.resolve();
        })
     |> catch(err => {
-         Js.log(err);
+         onError(err);
          Js.Promise.resolve();
        })
     |> ignore
   );
 
-let get = (url, onStatus, onSuccess) =>
+let get = (url, onStatus, ~onError=Js.log, onSuccess) =>
   Js.Promise.(
     Fetch.fetch(url)
     |> then_(response => {
@@ -46,7 +46,7 @@ let get = (url, onStatus, onSuccess) =>
          Js.Promise.resolve();
        })
     |> catch(err => {
-         Js.log(err);
+         onError(err);
          Js.Promise.resolve();
        })
     |> ignore

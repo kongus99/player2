@@ -2,9 +2,7 @@ open User;
 [@react.component]
 let make = () => {
   let (user, setUser) = React.useState(() => Unauthorized);
-  let onAuthorized = u => setUser(_ => Authorized(u));
-
-  React.useEffect0(() => {
+  let fetchUser = _ =>
     Fetcher.get(
       "/api/user",
       Belt_MapInt.fromArray([|
@@ -17,16 +15,19 @@ let make = () => {
         ),
         (200, Fetch.Response.json),
       |]),
-      json =>
-      setUser(_ => Authorized(json |> Decode.authorized))
+      json => setUser(_ => Authorized(json |> Decode.authorized)),
+      ~onError=_ => (),
     );
+
+  React.useEffect0(() => {
+    fetchUser();
     None;
   });
 
   switch (user) {
   | Unauthorized =>
-    <Login initial={username: "", password: ""} onAuthorized />
-  | Authorizing(unathorized) => <Login initial=unathorized onAuthorized />
-  | _ => <Login initial={username: "", password: ""} onAuthorized />
+    <Login initial={username: "", password: ""} onLogin=fetchUser />
+  | Authorized(_) => <Logout onLogout=fetchUser />
+  | Creating => <div />
   };
 };

@@ -12,7 +12,6 @@ type authorized = {
 type user =
   | Unauthorized
   | Creating
-  | Authorizing(unathorized)
   | Authorized(authorized);
 
 module Decode = {

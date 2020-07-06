@@ -29,36 +29,40 @@ let recalculateInput = name =>
   Validation.Validate.recalculate(name, validators);
 
 [@react.component]
-let make = (~initial: unathorized, ~onAuthorized: authorized => unit) => {
+let make = (~initial: unathorized, ~onLogin: string => unit) => {
   let (user, setUser) = React.useState(() => initial);
   let (alert, setAlert) = React.useState(() => None);
   let (loginVisible, setLoginVisible) = React.useState(() => false);
   let (valid, setValid) =
     React.useState(() => Validation.Validate.calculate(validators, user));
+  let statusResolver =
+    Belt_MapInt.fromArray([|
+      (
+        403,
+        _ => {
+          setAlert(_ => Some("Incorrect login/password."));
+          Js.Promise.reject(Not_found);
+        },
+      ),
+      (
+        200,
+        response => {
+          setAlert(_ => None);
+          Fetch.Response.text(response);
+        },
+      ),
+    |]);
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault;
     e->ReactEvent.Form.stopPropagation;
     Fetcher.post(
       "/api/authenticate",
       Encode.unathorized(user),
-      Belt_MapInt.fromArray([|
-        (
-          403,
-          _ => {
-            setAlert(_ => Some("Incorrect login/password."));
-            Js.Promise.reject(Not_found);
-          },
-        ),
-        (
-          200,
-          response => {
-            setAlert(_ => None);
-            Fetch.Response.json(response);
-          },
-        ),
-      |]),
-      json =>
-      onAuthorized(json |> Decode.authorized)
+      statusResolver,
+      text => {
+        setLoginVisible(_ => false);
+        onLogin(text);
+      },
     );
   };
 
