@@ -63,6 +63,7 @@ module Player = {
   [@react.component]
   let make = () => {
     let (state, setState) = React.useState(() => Loading);
+    let (authorized, setAuthorized) = React.useState(() => false);
     let (playerOptions, setPlayerOptions) =
       React.useState(() => Player.{play: true, playlist: true, loop: false});
     React.useEffect0(() => {
@@ -104,75 +105,89 @@ module Player = {
       |> Belt_Option.getWithDefault(_, <div />);
 
     Bootstrap.(
-      <div>
-        <Authorize />
-        {switch (state) {
-         | Loaded(Some(id), videos) => renderPlayer(id, videos)
-         | _ => <div />
-         }}
-        <ButtonGroup toggle=true>
-          <ToggleButton
-            _type="checkbox"
-            checked={playerOptions.play}
-            size="sm"
-            onChange={e =>
-              setPlayerOptions(o =>
-                {...o, play: ReactEvent.Form.currentTarget(e)##checked}
-              )
-            }>
-            {React.string("Autoplay")}
-          </ToggleButton>
-          <ToggleButton
-            _type="checkbox"
-            checked={playerOptions.loop}
-            size="sm"
-            onChange={e =>
-              setPlayerOptions(o =>
-                {...o, loop: ReactEvent.Form.currentTarget(e)##checked}
-              )
-            }>
-            {React.string("Loop")}
-          </ToggleButton>
-          <ToggleButton
-            _type="checkbox"
-            checked={playerOptions.playlist}
-            size="sm"
-            onChange={e =>
-              setPlayerOptions(o =>
-                {...o, playlist: ReactEvent.Form.currentTarget(e)##checked}
-              )
-            }>
-            {React.string("Playlist")}
-          </ToggleButton>
-        </ButtonGroup>
-        <Accordion>
-          <Card>
-            <Accordion.Toggle _as=Card.header eventKey="0">
-              {React.string("Playlist")}
-            </Accordion.Toggle>
-            <Accordion.Collapse eventKey="0">
-              <Card.Body>
-                {switch (state) {
-                 | Loading => React.string("Loading")
-                 | ErrorLoading => React.string("Error")
-                 | Loaded(id, videos) =>
-                   <VideoList
-                     id
-                     videos
-                     onClick={(i, _) =>
-                       setState(_ => Loaded(Some(i), videos))
-                     }
-                   />
-                 }}
-              </Card.Body>
-            </Accordion.Collapse>
-          </Card>
-          {switch (state) {
-           | Loaded(Some(id), _) => <Album id />
-           | _ => <div />
+      <>
+        <ButtonGroup>
+          <Authorize onAuthorize={v => setAuthorized(_ => v)} />
+          {if (authorized) {
+             <Button> {React.string("+")} </Button>;
+           } else {
+             <div />;
            }}
-        </Accordion>
-      </div>
+        </ButtonGroup>
+        <Card border="dark" className="text-center">
+          <Card.Body>
+            {switch (state) {
+             | Loaded(Some(id), videos) => renderPlayer(id, videos)
+             | _ => <div />
+             }}
+            <ButtonGroup toggle=true>
+              <ToggleButton
+                _type="checkbox"
+                checked={playerOptions.play}
+                size="sm"
+                onChange={e =>
+                  setPlayerOptions(o =>
+                    {...o, play: ReactEvent.Form.currentTarget(e)##checked}
+                  )
+                }>
+                {React.string("Autoplay")}
+              </ToggleButton>
+              <ToggleButton
+                _type="checkbox"
+                checked={playerOptions.loop}
+                size="sm"
+                onChange={e =>
+                  setPlayerOptions(o =>
+                    {...o, loop: ReactEvent.Form.currentTarget(e)##checked}
+                  )
+                }>
+                {React.string("Loop")}
+              </ToggleButton>
+              <ToggleButton
+                _type="checkbox"
+                checked={playerOptions.playlist}
+                size="sm"
+                onChange={e =>
+                  setPlayerOptions(o =>
+                    {
+                      ...o,
+                      playlist: ReactEvent.Form.currentTarget(e)##checked,
+                    }
+                  )
+                }>
+                {React.string("Playlist")}
+              </ToggleButton>
+            </ButtonGroup>
+            <Accordion>
+              <Card>
+                <Accordion.Toggle _as=Card.header eventKey="0">
+                  {React.string("Playlist")}
+                </Accordion.Toggle>
+                <Accordion.Collapse eventKey="0">
+                  <Card.Body>
+                    {switch (state) {
+                     | Loading => React.string("Loading")
+                     | ErrorLoading => React.string("Error")
+                     | Loaded(id, videos) =>
+                       <VideoList
+                         id
+                         videos
+                         onClick={(i, _) =>
+                           setState(_ => Loaded(Some(i), videos))
+                         }
+                       />
+                     }}
+                  </Card.Body>
+                </Accordion.Collapse>
+              </Card>
+              {switch (state) {
+               | Loaded(Some(id), _) => <Album id />
+               | _ => <div />
+               }}
+            </Accordion>
+          </Card.Body>
+        </Card>
+      </>
     );
   };
 };

@@ -7,8 +7,6 @@ type youtube = {ytControls: int};
 
 type videoJSOptions = {
   controls: bool,
-  width: int,
-  height: int,
   techOrder: array(string),
   sources: array(source),
   youtube,
@@ -23,8 +21,6 @@ type playerOptions = {
 let initialPlayerOptions = src => {
   {
     controls: true,
-    width: 480,
-    height: 360,
     techOrder: [|"youtube"|],
     sources: [|{type_: "video/youtube", src}|],
     youtube: {
@@ -54,7 +50,8 @@ let createPlayer = (videoId, setCurrentTime) => {
   callOnPlayer(p => p##dispose());
   let container = document##getElementById("mainPlayer");
   let playerNode = document##createElement("video");
-  playerNode##className #= "video-js vjs-default-skin sticky-top";
+  playerNode##className
+  #= "video-js vjs-default-skin vjs-big-play-centered col vjs-fluid";
 
   let reference = container##appendChild(playerNode);
   let player =
@@ -63,6 +60,7 @@ let createPlayer = (videoId, setCurrentTime) => {
       ~options=
         initialPlayerOptions("https://www.youtube.com/watch?v=" ++ videoId),
     );
+  let () = player##responsive(true);
   let () =
     player##on("timeupdate", () => {setCurrentTime(player##currentTime())});
   ();
@@ -99,8 +97,8 @@ let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
     [|playerOptions|],
   );
 
-  <div id="mainPlayer">
-    <span>
+  <div className="container">
+    <span className="row">
       {React.string(
          "Current Time: "
          ++ {
@@ -108,5 +106,6 @@ let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
          },
        )}
     </span>
+    <div id="mainPlayer" className="row" />
   </div>;
 };

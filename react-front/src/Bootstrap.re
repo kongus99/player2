@@ -58,7 +58,16 @@ module ButtonGroup = {
 
 module Card = {
   [@bs.module "react-bootstrap/Card"] [@react.component]
-  external make: (~children: React.element=?) => React.element = "default";
+  external make:
+    (
+      ~bg: string=?,
+      ~border: string=?,
+      ~className: string=?,
+      ~text: string=?,
+      ~children: React.element=?
+    ) =>
+    React.element =
+    "default";
   [@bs.module "react-bootstrap/Card"] [@bs.scope "default"]
   external header: React.element = "Header";
   module Body = {
