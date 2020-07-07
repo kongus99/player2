@@ -1,6 +1,13 @@
-type unathorized = {
+type login = {
   username: string,
   password: string,
+};
+
+type create = {
+  name: string,
+  email: string,
+  pass: string,
+  passRepeated: string,
 };
 
 type authorized = {
@@ -9,9 +16,12 @@ type authorized = {
   email: string,
 };
 
+type unathorized =
+  | Login
+  | Create;
+
 type user =
   | Unauthorized
-  | Creating
   | Authorized(authorized);
 
 module Decode = {
@@ -25,7 +35,7 @@ module Decode = {
 };
 
 module Encode = {
-  let unathorized: unathorized => Js.Json.t =
+  let login: login => Js.Json.t =
     user =>
       Json.Encode.(
         object_([

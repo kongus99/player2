@@ -29,10 +29,9 @@ let recalculateInput = name =>
   Validation.Validate.recalculate(name, validators);
 
 [@react.component]
-let make = (~initial: unathorized, ~onLogin: string => unit) => {
-  let (user, setUser) = React.useState(() => initial);
+let make = (~onLogin: string => unit) => {
+  let (user, setUser) = React.useState(() => {username: "", password: ""});
   let (alert, setAlert) = React.useState(() => None);
-  let (loginVisible, setLoginVisible) = React.useState(() => false);
   let (valid, setValid) =
     React.useState(() => Validation.Validate.calculate(validators, user));
   let statusResolver =
@@ -57,81 +56,60 @@ let make = (~initial: unathorized, ~onLogin: string => unit) => {
     e->ReactEvent.Form.stopPropagation;
     Fetcher.post(
       "/api/authenticate",
-      Encode.unathorized(user),
+      Encode.login(user),
       statusResolver,
-      text => {
-        setLoginVisible(_ => false);
-        onLogin(text);
-      },
+      onLogin,
     );
   };
 
   Bootstrap.(
     <>
-      <Button
-        onClick={() => {
-          setAlert(_ => None);
-          setLoginVisible(_ => true);
-        }}>
-        {React.string("Login")}
-      </Button>
-      <Modal
-        size="lg" show=loginVisible onHide={() => setLoginVisible(_ => false)}>
-        <Modal.Header>
-          <InputGroup>
-            <Button variant="primary"> {React.string("Log in")} </Button>
-            <Button variant="primary"> {React.string("Create")} </Button>
-          </InputGroup>
-        </Modal.Header>
-        <Modal.Body>
-          <Dialog.Alert alert dismissAlert={() => setAlert(_ => None)} />
-          <Form onSubmit=handleSubmit>
-            <Dialog.Control
-              control={
-                id: userInput,
-                _type: "text",
-                placeholder: "Username",
-                value: user.username,
-              }
-              validation={Validation.Validate.validate(userInput, valid)}
-              onChange={e => {
-                let username = ReactEvent.Form.target(e)##value;
-                setUser(u => {
-                  let newUser = {...u, username};
-                  setValid(v => recalculateInput(userInput, v, newUser));
-                  newUser;
-                });
-              }}
-            />
-            <Dialog.Control
-              control={
-                id: passInput,
-                _type: "password",
-                placeholder: "Password",
-                value: user.password,
-              }
-              validation={Validation.Validate.validate(passInput, valid)}
-              onChange={e => {
-                let password = ReactEvent.Form.target(e)##value;
-                setUser(u => {
-                  let newUser = {...u, password};
-                  setValid(v => recalculateInput(passInput, v, newUser));
-                  newUser;
-                });
-              }}
-            />
-            <Form.Group>
-              {if (Validation.Validate.canSubmit(valid)) {
-                 <Button variant="primary" _type="submit">
-                   {React.string("Submit")}
-                 </Button>;
-               } else {
-                 <div />;
-               }}
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-      </Modal>
+      <Dialog.Alert alert dismissAlert={() => setAlert(_ => None)} />
+      <Form onSubmit=handleSubmit>
+        <Dialog.Control
+          control={
+            id: userInput,
+            _type: "text",
+            placeholder: "Username",
+            value: user.username,
+          }
+          validation={Validation.Validate.validate(userInput, valid)}
+          onChange={e => {
+            let username = ReactEvent.Form.target(e)##value;
+            setUser(u => {
+              let newUser = {...u, username};
+              setValid(v => recalculateInput(userInput, v, newUser));
+              newUser;
+            });
+          }}
+        />
+        <Dialog.Control
+          control={
+            id: passInput,
+            _type: "password",
+            placeholder: "Password",
+            value: user.password,
+          }
+          validation={Validation.Validate.validate(passInput, valid)}
+          onChange={e => {
+            let password = ReactEvent.Form.target(e)##value;
+            setUser(u => {
+              let newUser = {...u, password};
+              setValid(v => recalculateInput(passInput, v, newUser));
+              newUser;
+            });
+          }}
+        />
+        <Form.Group>
+          {if (Validation.Validate.canSubmit(valid)) {
+             <Button variant="primary" _type="submit">
+               {React.string("Submit")}
+             </Button>;
+           } else {
+             <div />;
+           }}
+        </Form.Group>
+      </Form>
     </>
   );
 };

@@ -24,6 +24,14 @@ let matches = (s, extractor, invalid, validator, value) =>
   } else {
     Invalid(invalid);
   };
+
+let areSame = (extractor1, extractor2, invalid, validator, value) =>
+  if (extractor1(value) == extractor2(value)) {
+    validator(value);
+  } else {
+    Invalid(invalid);
+  };
+
 let init = (validators, validator) => {
   forFields: Belt_MapString.fromArray(validators),
   forSubmit: validator,

@@ -226,6 +226,7 @@ module ToggleButton = {
       ~_type: string=?,
       ~size: string=?,
       ~value: 'a=?,
+      ~variant: string=?,
       ~onChange: ReactEvent.Form.t => unit=?,
       ~children: React.element=?
     ) =>
