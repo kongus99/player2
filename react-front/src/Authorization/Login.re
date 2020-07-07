@@ -1,4 +1,17 @@
-open User;
+type login = {
+  username: string,
+  password: string,
+};
+
+module Encode = {
+  let login = user =>
+    Json.Encode.(
+      object_([
+        ("username", string(user.username)),
+        ("password", string(user.password)),
+      ])
+    );
+};
 
 let userInput = "usernameInput";
 let passInput = "passwordInput";

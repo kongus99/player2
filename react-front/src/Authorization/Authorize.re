@@ -1,4 +1,25 @@
-open User;
+type authorized = {
+  id: int,
+  name: string,
+  email: string,
+};
+
+type unathorized =
+  | Login
+  | Create;
+
+type user =
+  | Unauthorized
+  | Authorized(authorized);
+
+module Decode = {
+  let authorized = json =>
+    Json.Decode.{
+      id: json |> field("id", int),
+      name: json |> field("username", string),
+      email: json |> field("email", string),
+    };
+};
 
 module Authorize = {
   [@react.component]
