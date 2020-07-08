@@ -22,3 +22,14 @@ module Decode = {
       videoId: json |> field("videoId", string),
     };
 };
+
+module Encode = {
+  let unpersisted: unpersisted => Js.Json.t =
+    unpersisted =>
+      Json.Encode.(
+        object_([
+          ("title", string(unpersisted.title)),
+          ("videoId", string(unpersisted.videoId)),
+        ])
+      );
+};
