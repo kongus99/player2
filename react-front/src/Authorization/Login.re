@@ -48,22 +48,12 @@ let make = (~onLogin: string => unit) => {
   let (valid, setValid) =
     React.useState(() => Validation.Validate.calculate(validators, user));
   let statusResolver =
-    Belt_MapInt.fromArray([|
-      (
-        403,
-        _ => {
-          setAlert(_ => Some("Incorrect login/password."));
-          Js.Promise.reject(Not_found);
-        },
-      ),
-      (
-        200,
-        response => {
-          setAlert(_ => None);
-          Fetch.Response.text(response);
-        },
-      ),
-    |]);
+    Dialog.statusResolver(
+      [|(403, "Incorrect login/password.")|],
+      x => setAlert(_ => x),
+      Fetch.Response.text,
+    );
+
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault;
     e->ReactEvent.Form.stopPropagation;
@@ -73,6 +63,15 @@ let make = (~onLogin: string => unit) => {
       statusResolver,
       onLogin,
     );
+  };
+
+  let handleChange = (id, update, e) => {
+    let value = ReactEvent.Form.target(e)##value;
+    setUser(u => {
+      let newUser = update(u, value);
+      setValid(v => recalculateInput(id, v, newUser));
+      newUser;
+    });
   };
 
   Bootstrap.(
@@ -87,14 +86,9 @@ let make = (~onLogin: string => unit) => {
             value: user.username,
           }
           validation={Validation.Validate.validate(userInput, valid)}
-          onChange={e => {
-            let username = ReactEvent.Form.target(e)##value;
-            setUser(u => {
-              let newUser = {...u, username};
-              setValid(v => recalculateInput(userInput, v, newUser));
-              newUser;
-            });
-          }}
+          onChange={handleChange(userInput, (u, username) =>
+            {...u, username}
+          )}
         />
         <Dialog.Control
           control={
@@ -104,14 +98,9 @@ let make = (~onLogin: string => unit) => {
             value: user.password,
           }
           validation={Validation.Validate.validate(passInput, valid)}
-          onChange={e => {
-            let password = ReactEvent.Form.target(e)##value;
-            setUser(u => {
-              let newUser = {...u, password};
-              setValid(v => recalculateInput(passInput, v, newUser));
-              newUser;
-            });
-          }}
+          onChange={handleChange(passInput, (u, password) =>
+            {...u, password}
+          )}
         />
         <Form.Group>
           {if (Validation.Validate.canSubmit(valid)) {

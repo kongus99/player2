@@ -50,3 +50,25 @@ module Control = {
     );
   };
 };
+
+let statusResolver = (errors, feedbackSetter, resultExtractor) =>
+  errors
+  ->Belt_Array.map(((code, message)) =>
+      (
+        code,
+        _ => {
+          feedbackSetter(Some(message));
+          Js.Promise.reject(Not_found);
+        },
+      )
+    )
+  ->Belt_Array.concat([|
+      (
+        200,
+        response => {
+          feedbackSetter(None);
+          resultExtractor(response);
+        },
+      ),
+    |])
+  ->Belt_MapInt.fromArray;

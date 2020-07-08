@@ -1,28 +1,16 @@
-type video = {
-  id: int,
-  title: string,
-  videoId: string,
-};
+open Types;
 
 type state =
   | Loading
   | ErrorLoading
-  | Loaded(option(int), array(video));
+  | Loaded(option(int), array(persisted));
 
-module Decode = {
-  let video = json =>
-    Json.Decode.{
-      id: json |> field("id", int),
-      title: json |> field("title", string),
-      videoId: json |> field("videoId", string),
-    };
-};
 module VideoList = {
   [@react.component]
   let make =
       (
         ~id: option(int),
-        ~videos: array(video),
+        ~videos: array(persisted),
         ~onClick: (int, ReactEvent.Mouse.t) => unit,
       ) => {
     Bootstrap.(
@@ -72,7 +60,10 @@ module Player = {
         |> then_(Fetch.Response.json)
         |> then_(jsonResponse => {
              setState(_previousState =>
-               Loaded(None, jsonResponse |> Json.Decode.array(Decode.video))
+               Loaded(
+                 None,
+                 jsonResponse |> Json.Decode.array(Decode.persisted),
+               )
              );
              Js.Promise.resolve();
            })
@@ -109,7 +100,7 @@ module Player = {
         <ButtonGroup>
           <Authorize onAuthorize={v => setAuthorized(_ => v)} />
           {if (authorized) {
-             <Button> {React.string("+")} </Button>;
+             <Modify />;
            } else {
              <div />;
            }}

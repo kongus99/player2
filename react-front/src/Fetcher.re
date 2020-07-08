@@ -30,9 +30,16 @@ let post = (url, content, onStatus, ~onError=Js.log, onSuccess) =>
     |> ignore
   );
 
-let get = (url, onStatus, ~onError=Js.log, onSuccess) =>
+let get = (url, params, onStatus, ~onError=Js.log, onSuccess) =>
   Js.Promise.(
-    Fetch.fetch(url)
+    Fetch.fetch(
+      [
+        url,
+        params->Belt_List.map(((name, value)) => name ++ "=" ++ value)
+        |> String.concat("&"),
+      ]
+      |> String.concat("?"),
+    )
     |> then_(response => {
          let status = Fetch.Response.status(response);
          let statusResolver =
@@ -41,8 +48,8 @@ let get = (url, onStatus, ~onError=Js.log, onSuccess) =>
            );
          statusResolver(response);
        })
-    |> then_(json => {
-         onSuccess(json);
+    |> then_(success => {
+         onSuccess(success);
          Js.Promise.resolve();
        })
     |> catch(err => {

@@ -18,8 +18,8 @@ let minLength = (length, extractor, validator, value) =>
   } else {
     Indeterminate;
   };
-let matches = (s, extractor, invalid, validator, value) =>
-  if (s->Js.Re.fromString->Js.Re.test_(extractor(value))) {
+let matches = (regexp, extractor, invalid, validator, value) =>
+  if (regexp->Js.Re.fromString->Js.Re.test_(extractor(value))) {
     validator(value);
   } else {
     Invalid(invalid);

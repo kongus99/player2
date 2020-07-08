@@ -96,22 +96,11 @@ let make = (~onCreate: string => unit) => {
     React.useState(() => Validation.Validate.calculate(validators, user));
 
   let statusResolver =
-    Belt_MapInt.fromArray([|
-      (
-        403,
-        _ => {
-          setAlert(_ => Some("Could not create user."));
-          Js.Promise.reject(Not_found);
-        },
-      ),
-      (
-        200,
-        response => {
-          setAlert(_ => None);
-          Fetch.Response.text(response);
-        },
-      ),
-    |]);
+    Dialog.statusResolver(
+      [|(403, "Could not create user.")|],
+      x => setAlert(_ => x),
+      Fetch.Response.text,
+    );
 
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault;

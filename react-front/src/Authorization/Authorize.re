@@ -73,6 +73,7 @@ let make = (~onAuthorize: bool => unit) => {
   let fetchUser = _ =>
     Fetcher.get(
       "/api/user",
+      [],
       Belt_MapInt.fromArray([|
         (
           403,
