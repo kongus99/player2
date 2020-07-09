@@ -48,7 +48,7 @@ let make = (~onLogin: string => unit) => {
   let (valid, setValid) =
     React.useState(() => Validation.Validate.calculate(validators, user));
   let statusResolver =
-    Dialog.statusResolver(
+    Fetcher.statusResolver(
       [|(403, "Incorrect login/password.")|],
       x => setAlert(_ => x),
       Fetch.Response.text,

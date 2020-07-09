@@ -1,4 +1,3 @@
-open Types;
 let urlInput = "urlInput";
 let videoIdRegexp = "v=([^&\\s]+)";
 let validators =
@@ -31,13 +30,13 @@ let recalculateInput = name =>
   Validation.Validate.recalculate(name, validators);
 
 [@react.component]
-let make = (~onVerified: unpersisted => unit) => {
+let make = (~onVerified: Save.video => unit) => {
   let (url, setUrl) = React.useState(() => "");
   let (alert, setAlert) = React.useState(() => None);
   let (valid, setValid) =
     React.useState(() => Validation.Validate.calculate(validators, url));
   let statusResolver =
-    Dialog.statusResolver(
+    Fetcher.statusResolver(
       [|(400, "Could not verify url.")|],
       x => setAlert(_ => x),
       Fetch.Response.json,
@@ -56,7 +55,7 @@ let make = (~onVerified: unpersisted => unit) => {
       ->Js.Nullable.toOption
       ->Belt_Option.getExn;
     Fetcher.get("/api/verify", [("videoId", videoId)], statusResolver, json => {
-      onVerified(Types.Decode.unpersisted(json))
+      onVerified(Save.Decode.video(json))
     });
   };
 

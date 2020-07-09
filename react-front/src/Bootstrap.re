@@ -123,6 +123,7 @@ module Form = {
     [@bs.module "react-bootstrap/FormControl"] [@react.component]
     external make:
       (
+        ~_as: string=?,
         ~disabled: bool=?,
         ~isInvalid: bool=?,
         ~isValid: bool=?,
@@ -130,6 +131,7 @@ module Form = {
         ~_type: string=?,
         ~placeholder: string=?,
         ~required: bool=?,
+        ~rows: int=?,
         ~value: string=?,
         ~onChange: ReactEvent.Form.t => unit=?,
         ~children: React.element=?

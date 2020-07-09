@@ -96,7 +96,7 @@ let make = (~onCreate: string => unit) => {
     React.useState(() => Validation.Validate.calculate(validators, user));
 
   let statusResolver =
-    Dialog.statusResolver(
+    Fetcher.statusResolver(
       [|(403, "Could not create user.")|],
       x => setAlert(_ => x),
       Fetch.Response.text,

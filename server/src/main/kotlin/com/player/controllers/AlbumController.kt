@@ -34,17 +34,19 @@ class AlbumController {
 
     @CrossOrigin
     @PostMapping("/api/video/{videoId}/album")
-    fun post(@PathVariable videoId: Int, @AuthenticationPrincipal principal: String, @Valid @RequestBody album: Album.AlbumToCreate): Int {
+    fun post(@PathVariable videoId: Int, @AuthenticationPrincipal principal: String, @Valid @RequestBody album: Album.AlbumToCreate): Int? {
         val userId = dsl?.selectFrom(Tables.USER)
                 ?.where(Tables.USER.NAME.eq(principal))
                 ?.first()!!.id
-        return dsl.insertInto(AlbumTable.ALBUM, AlbumTable.ALBUM.VIDEOID, AlbumTable.ALBUM.USERID, AlbumTable.ALBUM.TRACKS)
-                ?.values(videoId, userId, album.saveTracks)
-                ?.onConflict(AlbumTable.ALBUM.VIDEOID)
-                ?.doUpdate()
-                ?.set(AlbumTable.ALBUM.TRACKS, album.saveTracks)
-                ?.set(AlbumTable.ALBUM.USERID, userId)
-                ?.returning()
-                ?.fetchOne()!!.id
+        return if (album.tracks.isNotEmpty()) {
+            dsl.insertInto(AlbumTable.ALBUM, AlbumTable.ALBUM.VIDEOID, AlbumTable.ALBUM.USERID, AlbumTable.ALBUM.TRACKS)
+                    ?.values(videoId, userId, album.saveTracks)
+                    ?.onConflict(AlbumTable.ALBUM.VIDEOID)
+                    ?.doUpdate()
+                    ?.set(AlbumTable.ALBUM.TRACKS, album.saveTracks)
+                    ?.set(AlbumTable.ALBUM.USERID, userId)
+                    ?.returning()
+                    ?.fetchOne()!!.id
+        } else null;
     }
 }

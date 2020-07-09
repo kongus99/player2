@@ -1,7 +1,6 @@
-open Types;
 type user =
   | Unverified
-  | Unpersisted(unpersisted);
+  | Verified(Save.video);
 
 [@react.component]
 let make = () => {
@@ -22,9 +21,8 @@ let make = () => {
         <Modal.Body>
           {switch (state) {
            | Unverified =>
-             <Verify onVerified={uv => setState(_ => Unpersisted(uv))} />
-           | Unpersisted(unpersisted) =>
-             <Persist unpersisted onPersist=Js.log />
+             <Verify onVerified={v => setState(_ => Verified(v))} />
+           | Verified(video) => <Save initial=video />
            }}
         </Modal.Body>
       </Modal>

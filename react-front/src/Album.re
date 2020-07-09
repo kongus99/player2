@@ -1,5 +1,6 @@
 type track = {
   title: string,
+  start: int,
   _end: option(int),
 };
 
@@ -15,34 +16,49 @@ module Decode = {
   let track = json =>
     Json.Decode.{
       title: json |> field("title", string),
+      start: json |> field("start", int),
       _end: json |> field("end", optional(int)),
     };
   let album = json =>
     Json.Decode.{tracks: json |> field("tracks", array(track))};
 };
 
+let toString = ({tracks}) => {
+  let formatTime = t =>
+    [t / 3600, t / 60 mod 60, t mod 60]
+    |> List.map(t =>
+         [t / 10, t mod 10] |> List.map(string_of_int) |> String.concat("")
+       )
+    |> String.concat(":");
+  tracks
+  ->Belt_Array.map(t => {formatTime(t.start) ++ " " ++ t.title})
+  ->Belt_List.fromArray
+  |> String.concat("\n");
+};
+
+let fetch = (id, onSuccess, onError) =>
+  Fetcher.get(
+    "/api/video/" ++ string_of_int(id) ++ "/album",
+    [],
+    Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
+    json => onSuccess(json |> Json.Decode.optional(Decode.album)),
+    ~onError,
+  );
+
 [@react.component]
 let make = (~id: int) => {
   let (state, setState) = React.useState(() => Loading);
   React.useEffect1(
     () => {
-      Js.Promise.(
-        Fetch.fetch("/api/video/" ++ string_of_int(id) ++ "/album")
-        |> then_(Fetch.Response.json)
-        |> then_(jsonResponse => {
-             setState(_previousState => {
-               let album = jsonResponse |> Json.Decode.optional(Decode.album);
-               album
-               |> Belt_Option.map(_, a => Loaded(None, a))
-               |> Belt_Option.getWithDefault(_, NotFound);
-             });
-             Js.Promise.resolve();
-           })
-        |> catch(_err => {
-             setState(_previousState => ErrorLoading);
-             Js.Promise.resolve();
-           })
-        |> ignore
+      fetch(
+        id,
+        album =>
+          setState(_ => {
+            album
+            |> Belt_Option.map(_, a => Loaded(None, a))
+            |> Belt_Option.getWithDefault(_, NotFound)
+          }),
+        _ => setState(_ => ErrorLoading),
       );
       None;
     },
