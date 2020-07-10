@@ -68,20 +68,15 @@ module Player = {
     let (playerOptions, setPlayerOptions) =
       React.useState(() => Player.{play: true, playlist: true, loop: false});
     React.useEffect0(() => {
-      Js.Promise.(
-        Fetch.fetch("/api/video")
-        |> then_(Fetch.Response.json)
-        |> then_(jsonResponse => {
-             setState(_previousState =>
-               Loaded(None, jsonResponse |> Json.Decode.array(Decode.video))
-             );
-             Js.Promise.resolve();
-           })
-        |> catch(_err => {
-             setState(_previousState => ErrorLoading);
-             Js.Promise.resolve();
-           })
-        |> ignore
+      Fetcher.get(
+        "/api/video",
+        [],
+        Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
+        ~onError=_ => setState(_ => ErrorLoading),
+        json =>
+          setState(_ =>
+            Loaded(None, json |> Json.Decode.array(Decode.video))
+          ),
       );
       None;
     });
@@ -110,9 +105,18 @@ module Player = {
         <ButtonGroup>
           <Authorize onAuthorize={v => setAuthorized(_ => v)} />
           {if (authorized) {
-             <Modify />;
+             <Add />;
            } else {
              <div />;
+           }}
+          {switch (state) {
+           | Loaded(Some(id), videos) =>
+             videos
+             ->Belt_Array.getBy(v => v.id == id)
+             ->Belt_Option.mapWithDefault(<div />, v =>
+                 <Edit id={v.id} title={v.title} videoId={v.videoId} />
+               )
+           | _ => <div />
            }}
         </ButtonGroup>
         <Card border="dark" className="text-center">
