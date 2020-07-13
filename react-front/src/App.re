@@ -1,7 +1,6 @@
 [@react.component]
 let make = () => {
   let (authorized, setAuthorized) = React.useState(() => false);
-
   Bootstrap.(
     <>
       <ButtonGroup>
@@ -12,16 +11,16 @@ let make = () => {
            <div />;
          }}
       </ButtonGroup>
-      //          {switch (state) {
-      //           | Loaded(Some(id), videos) =>
-      //             videos
-      //             ->Belt_Array.getBy(v => v.id == id)
-      //             ->Belt_Option.mapWithDefault(<div />, v =>
-      //                 <Video.Edit id={v.id} title={v.title} videoId={v.videoId} />
-      //               )
-      //           | _ => <div />
-      //           }}
-      <Video.List onSelected=Js.log />
+      //        {switch (state) {
+      //         | Loaded(Some(id), videos) =>
+      //           videos
+      //           ->Belt_Array.getBy(v => v.id == id)
+      //           ->Belt_Option.mapWithDefault(<div />, v =>
+      //               <Video.Edit id={v.id} title={v.title} videoId={v.videoId} />
+      //             )
+      //         | _ => <div />
+      //         }}
+      <Video.List />
     </>
   );
 };

@@ -300,16 +300,8 @@ module Modal = {
 };
 
 module List = {
-  type video = {
-    id: int,
-    title: string,
-    videoId: string,
-  };
-
-  type state = {
-    playing: option(video),
-    videos: array(video),
-  };
+  open AppStore;
+  type state = array(video);
 
   module Decode = {
     let video = json =>
@@ -324,44 +316,44 @@ module List = {
     playlist
       ? Array_Helper.find(~cyclic=loop, e => e.id == v.id, videos) : Some(v);
   };
+  let videoSelector = state => state.selected;
 
   [@react.component]
-  let make = (~onSelected: video => unit) => {
-    let (state, setState) =
-      React.useState(() => {playing: None, videos: [||]});
+  let make = () => {
+    let (state, setState) = React.useState(() => [||]);
     let (options, setOptions) =
       React.useState(() => Player.{play: true, playlist: false, loop: true});
+    let selected = StoreWrapper.useSelector(videoSelector);
+    let dispatch = StoreWrapper.useDispatch();
     React.useEffect0(() => {
       Fetcher.get(
         "/api/video",
         [],
         Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
         json =>
-        setState(s =>
-          {...s, videos: json |> Json.Decode.array(Decode.video)}
-        )
+        setState(_ => json |> Json.Decode.array(Decode.video))
       );
       None;
     });
 
     Bootstrap.(
       <>
-        {state.playing
-         ->Belt_Option.mapWithDefault(<div />, v =>
-             <Card border="dark" className="text-center">
-               <Card.Body>
-                 <Player
-                   videoId={v.videoId}
-                   playerOptions=options
-                   onVideoEnd={() =>
-                     setState(s =>
-                       {...s, playing: nextVideo(options, v, s.videos)}
-                     )
-                   }
-                 />
-               </Card.Body>
-             </Card>
-           )}
+        {selected->Belt_Option.mapWithDefault(<div />, v =>
+           <Card border="dark" className="text-center">
+             <Card.Body>
+               <Player
+                 videoId={v.videoId}
+                 playerOptions=options
+                 onVideoEnd={() =>
+                   Belt_Option.flatMap(selected, vid =>
+                     nextVideo(options, vid, state)
+                   )
+                   ->Belt_Option.forEach(v => dispatch(Select(v)))
+                 }
+               />
+             </Card.Body>
+           </Card>
+         )}
         <Player.Options initial=options onChange={o => setOptions(_ => o)} />
         <Accordion>
           <Card>
@@ -371,19 +363,16 @@ module List = {
             <Accordion.Collapse eventKey="0">
               <Card.Body>
                 <ListGroup>
-                  {state.videos
+                  {state
                    |> Array.map(v => {
                         <ListGroup.Item
                           key={string_of_int(v.id)}
                           action=true
                           active={Belt_Option.mapWithDefault(
-                            state.playing, false, p =>
+                            selected, false, p =>
                             p.id == v.id
                           )}
-                          onClick={_ => {
-                            setState(s => {...s, playing: Some(v)});
-                            onSelected(v);
-                          }}>
+                          onClick={_ => dispatch(Select(v))}>
                           {ReasonReact.string(v.title)}
                         </ListGroup.Item>
                       })
@@ -392,7 +381,7 @@ module List = {
               </Card.Body>
             </Accordion.Collapse>
           </Card>
-          {Belt_Option.mapWithDefault(state.playing, <div />, v =>
+          {Belt_Option.mapWithDefault(selected, <div />, v =>
              <Album id={v.id} />
            )}
         </Accordion>
