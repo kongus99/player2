@@ -1,1 +1,1 @@
-ReactDOMRe.renderToElementWithId(<App.Player />, "app");
+ReactDOMRe.renderToElementWithId(<App />, "app");

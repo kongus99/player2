@@ -77,6 +77,50 @@ let applyOptions = (playerOptions, onVideoEnd) => {
   });
 };
 
+module Options = {
+  [@react.component]
+  let make = (~initial: playerOptions, ~onChange: playerOptions => unit) => {
+    let (playerOptions, setPlayerOptions) = React.useState(() => initial);
+    let toggle = (setter, e) => {
+      let checked = ReactEvent.Form.currentTarget(e)##checked;
+      setPlayerOptions(o => {
+        let options = setter(o, checked);
+        onChange(options);
+        options;
+      });
+    };
+    Bootstrap.(
+      <Card border="dark" className="text-center">
+        <Card.Body>
+          <ButtonGroup toggle=true>
+            <ToggleButton
+              _type="checkbox"
+              checked={playerOptions.play}
+              size="sm"
+              onChange={toggle((o, play) => {...o, play})}>
+              {React.string("Autoplay")}
+            </ToggleButton>
+            <ToggleButton
+              _type="checkbox"
+              checked={playerOptions.loop}
+              size="sm"
+              onChange={toggle((o, loop) => {...o, loop})}>
+              {React.string("Loop")}
+            </ToggleButton>
+            <ToggleButton
+              _type="checkbox"
+              checked={playerOptions.playlist}
+              size="sm"
+              onChange={toggle((o, playlist) => {...o, playlist})}>
+              {React.string("Playlist")}
+            </ToggleButton>
+          </ButtonGroup>
+        </Card.Body>
+      </Card>
+    );
+  };
+};
+
 [@react.component]
 let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
   let (currentTime, setCurrentTime) = React.useState(() => 0);
