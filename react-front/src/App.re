@@ -1,27 +1,21 @@
 [@react.component]
 let make = () => {
-  open VideoStore;
-  let (authorized, setAuthorized) = React.useState(() => false);
+  open Store;
   let selected = Wrapper.useSelector(Config.Selector.selected);
+  let authorized = Wrapper.useSelector(Config.Selector.authorized);
   Bootstrap.(
     <>
       <ButtonGroup>
-        <Authorize onAuthorize={v => setAuthorized(_ => v)} />
+        <Authorize />
         {if (authorized) {
            <Video.Modal.Add />;
          } else {
            <div />;
          }}
+        {Belt_Option.mapWithDefault(selected, <div />, v =>
+           <Video.Modal.Edit id={v.id} title={v.title} videoId={v.videoId} />
+         )}
       </ButtonGroup>
-      //        {switch (state) {
-      //         | Loaded(Some(id), videos) =>
-      //           videos
-      //           ->Belt_Array.getBy(v => v.id == id)
-      //           ->Belt_Option.mapWithDefault(<div />, v =>
-      //               <Video.Edit id={v.id} title={v.title} videoId={v.videoId} />
-      //             )
-      //         | _ => <div />
-      //         }}
       {Belt_Option.mapWithDefault(selected, <div />, v =>
          <Player videoId={v.videoId} />
        )}

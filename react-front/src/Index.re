@@ -1,6 +1,6 @@
 ReactDOMRe.renderToElementWithId(
-  <VideoStore.Wrapper.Provider store=VideoStore.Config.store>
+  <Store.Wrapper.Provider store=Store.Config.store>
     <App />
-  </VideoStore.Wrapper.Provider>,
+  </Store.Wrapper.Provider>,
   "app",
 );

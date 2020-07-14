@@ -67,9 +67,9 @@ module Authorize = {
 };
 
 [@react.component]
-let make = (~onAuthorize: bool => unit) => {
+let make = () => {
   let (user, setUser) = React.useState(() => Unauthorized);
-
+  let dispatcher = Store.Wrapper.useDispatch();
   let fetchUser = _ =>
     Fetcher.get(
       "/api/user",
@@ -79,7 +79,7 @@ let make = (~onAuthorize: bool => unit) => {
           403,
           _ => {
             setUser(_ => Unauthorized);
-            onAuthorize(false);
+            dispatcher(Store.Config.Authorize(false));
             Js.Promise.reject(Not_found);
           },
         ),
@@ -87,7 +87,7 @@ let make = (~onAuthorize: bool => unit) => {
       |]),
       json => {
         setUser(_ => Authorized(json |> Decode.authorized));
-        onAuthorize(true);
+        dispatcher(Store.Config.Authorize(true));
       },
       ~onError=_ => (),
     );

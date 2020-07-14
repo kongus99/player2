@@ -60,21 +60,21 @@ let createPlayer = (videoId, setCurrentTime) => {
   ();
 };
 
-let applyOptions = (options: VideoStore.options, dispatch) => {
+let applyOptions = (options: Store.options, dispatch) => {
   callOnPlayer(p => {
     p##loop(options.loop);
     if (options.play) {
       p##play();
     };
     p##off("ended");
-    p##on("ended", _ => dispatch(VideoStore.Config.Next));
+    p##on("ended", _ => dispatch(Store.Config.Next));
   });
 };
 
 module Options = {
   [@react.component]
   let make = () => {
-    open VideoStore;
+    open Store;
     let dispatch = Wrapper.useDispatch();
     let options = Wrapper.useSelector(Config.Selector.options);
     let toggle = (setter, e) => {
@@ -115,9 +115,9 @@ module Options = {
 
 [@react.component]
 let make = (~videoId: string) => {
-  open VideoStore;
+  open Store;
   let (currentTime, setCurrentTime) = React.useState(() => 0);
-  let dispatch = VideoStore.Wrapper.useDispatch();
+  let dispatch = Wrapper.useDispatch();
   let options = Wrapper.useSelector(Config.Selector.options);
   React.useEffect1(
     () => {

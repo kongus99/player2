@@ -300,7 +300,7 @@ module Modal = {
 };
 
 module List = {
-  open VideoStore;
+  open Store;
   type state = array(video);
 
   [@react.component]
