@@ -228,6 +228,37 @@ module Modal = {
   };
 };
 
+module Tabs = {
+  [@bs.module "react-bootstrap/Tabs"] [@react.component]
+  external make:
+    (
+      ~activeKey: string=?,
+      ~defaultActiveKey: string=?,
+      ~id: string=?,
+      ~mountOnEnter: bool=?,
+      ~onSelect: ReactEvent.Form.t => unit=?,
+      ~unmountOnExit: bool=?,
+      ~variant: string=?,
+      ~children: React.element=?
+    ) =>
+    React.element =
+    "default";
+};
+
+module Tab = {
+  [@bs.module "react-bootstrap/Tab"] [@react.component]
+  external make:
+    (
+      ~disabled: bool=?,
+      ~eventKey: string=?,
+      ~tabClassName: string=?,
+      ~title: string,
+      ~children: React.element=?
+    ) =>
+    React.element =
+    "default";
+};
+
 module ToggleButton = {
   [@bs.module "react-bootstrap/ToggleButton"] [@react.component]
   external make:

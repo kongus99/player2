@@ -333,40 +333,22 @@ module List = {
       Store.Config.fetchVideos(dispatch);
       None;
     });
-
     Bootstrap.(
-      <>
-        <Accordion>
-          <Card>
-            <Accordion.Toggle _as=Card.header eventKey="0">
-              {React.string("Playlist")}
-            </Accordion.Toggle>
-            <Accordion.Collapse eventKey="0">
-              <Card.Body>
-                <ListGroup>
-                  {videos
-                   |> Array.map(v => {
-                        <ListGroup.Item
-                          key={string_of_int(v.id)}
-                          action=true
-                          active={Belt_Option.mapWithDefault(
-                            selected, false, p =>
-                            p.id == v.id
-                          )}
-                          onClick={_ => dispatch(Select(v))}>
-                          {ReasonReact.string(v.title)}
-                        </ListGroup.Item>
-                      })
-                   |> React.array}
-                </ListGroup>
-              </Card.Body>
-            </Accordion.Collapse>
-          </Card>
-          {Belt_Option.mapWithDefault(selected, <div />, v =>
-             <Album id={v.id} />
-           )}
-        </Accordion>
-      </>
+      <ListGroup>
+        {videos
+         |> Array.map(v => {
+              <ListGroup.Item
+                key={string_of_int(v.id)}
+                action=true
+                active={Belt_Option.mapWithDefault(selected, false, p =>
+                  p.id == v.id
+                )}
+                onClick={_ => dispatch(Select(v))}>
+                {ReasonReact.string(v.title)}
+              </ListGroup.Item>
+            })
+         |> React.array}
+      </ListGroup>
     );
   };
 };
