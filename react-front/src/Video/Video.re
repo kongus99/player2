@@ -299,6 +299,26 @@ module Modal = {
   };
 };
 
+module Delete = {
+  [@react.component]
+  let make = (~id: int) => {
+    let dispatch = Store.Wrapper.useDispatch();
+    let onClick = _ => {
+      Fetcher.delete(
+        "/api/video",
+        id,
+        Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
+        _ =>
+        Store.Config.fetchVideos(dispatch)
+      );
+    };
+
+    Bootstrap.(
+      <Button variant="danger" onClick> {React.string("X")} </Button>
+    );
+  };
+};
+
 module List = {
   open Store;
   type state = array(video);
@@ -310,13 +330,7 @@ module List = {
 
     let dispatch = Wrapper.useDispatch();
     React.useEffect0(() => {
-      Fetcher.get(
-        "/api/video",
-        [],
-        Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
-        json =>
-        dispatch(Load(json))
-      );
+      Store.Config.fetchVideos(dispatch);
       None;
     });
 

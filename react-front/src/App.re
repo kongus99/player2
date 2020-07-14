@@ -13,7 +13,10 @@ let make = () => {
            <div />;
          }}
         {Belt_Option.mapWithDefault(selected, <div />, v =>
-           <Video.Modal.Edit id={v.id} title={v.title} videoId={v.videoId} />
+           <>
+             <Video.Modal.Edit id={v.id} title={v.title} videoId={v.videoId} />
+             <Video.Delete id={v.id} />
+           </>
          )}
       </ButtonGroup>
       {Belt_Option.mapWithDefault(selected, <div />, v =>

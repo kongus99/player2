@@ -45,6 +45,16 @@ module Config = {
     | Load(Js.Json.t)
     | Next
     | Toggle(options => options);
+
+  let fetchVideos = dispatch =>
+    Fetcher.get(
+      "/api/video",
+      [],
+      Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
+      json =>
+      dispatch(Load(json))
+    );
+
   let reducer = (state, action) =>
     switch (action) {
     | Authorize(authorized) => {...state, authorized}
@@ -52,6 +62,7 @@ module Config = {
     | Load(json) => {
         ...state,
         videos: json |> Json.Decode.array(Decode.video),
+        selected: None,
       }
     | Next => {
         ...state,
