@@ -1,1 +1,6 @@
-ReactDOMRe.renderToElementWithId(<App />, "app");
+ReactDOMRe.renderToElementWithId(
+  <VideoStore.Wrapper.Provider store=VideoStore.Config.store>
+    <App />
+  </VideoStore.Wrapper.Provider>,
+  "app",
+);

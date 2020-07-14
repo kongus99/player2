@@ -322,12 +322,6 @@ module List = {
 
     Bootstrap.(
       <>
-        {selected->Belt_Option.mapWithDefault(<div />, v =>
-           <Card border="dark" className="text-center">
-             <Card.Body> <Player videoId={v.videoId} /> </Card.Body>
-           </Card>
-         )}
-        <Player.Options />
         <Accordion>
           <Card>
             <Accordion.Toggle _as=Card.header eventKey="0">

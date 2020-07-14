@@ -135,16 +135,21 @@ let make = (~videoId: string) => {
     },
     [|options|],
   );
-
-  <div className="container">
-    <span className="row">
-      {React.string(
-         "Current Time: "
-         ++ {
-           string_of_int(currentTime);
-         },
-       )}
-    </span>
-    <div id="mainPlayer" className="row" />
-  </div>;
+  Bootstrap.(
+    <Card className="text-center">
+      <Card.Body>
+        <div className="container">
+          <span className="row">
+            {React.string(
+               "Current Time: "
+               ++ {
+                 string_of_int(currentTime);
+               },
+             )}
+          </span>
+          <div id="mainPlayer" className="row" />
+        </div>
+      </Card.Body>
+    </Card>
+  );
 };

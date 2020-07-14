@@ -1,6 +1,8 @@
 [@react.component]
 let make = () => {
+  open VideoStore;
   let (authorized, setAuthorized) = React.useState(() => false);
+  let selected = Wrapper.useSelector(Config.Selector.selected);
   Bootstrap.(
     <>
       <ButtonGroup>
@@ -20,9 +22,11 @@ let make = () => {
       //             )
       //         | _ => <div />
       //         }}
-      <VideoStore.Wrapper.Provider store=VideoStore.Config.store>
-        <Video.List />
-      </VideoStore.Wrapper.Provider>
+      {Belt_Option.mapWithDefault(selected, <div />, v =>
+         <Player videoId={v.videoId} />
+       )}
+      <Player.Options />
+      <Video.List />
     </>
   );
 };
