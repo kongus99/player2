@@ -300,38 +300,22 @@ module Modal = {
 };
 
 module List = {
-  open AppStore;
+  open VideoStore;
   type state = array(video);
-
-  module Decode = {
-    let video = json =>
-      Json.Decode.{
-        id: json |> field("id", int),
-        title: json |> field("title", string),
-        videoId: json |> field("videoId", string),
-      };
-  };
-
-  let nextVideo = (Player.{playlist, loop}, v, videos) => {
-    playlist
-      ? Array_Helper.find(~cyclic=loop, e => e.id == v.id, videos) : Some(v);
-  };
-  let videoSelector = state => state.selected;
 
   [@react.component]
   let make = () => {
-    let (state, setState) = React.useState(() => [||]);
-    let (options, setOptions) =
-      React.useState(() => Player.{play: true, playlist: false, loop: true});
-    let selected = StoreWrapper.useSelector(videoSelector);
-    let dispatch = StoreWrapper.useDispatch();
+    let selected = Wrapper.useSelector(Config.Selector.selected);
+    let videos = Wrapper.useSelector(Config.Selector.videos);
+
+    let dispatch = Wrapper.useDispatch();
     React.useEffect0(() => {
       Fetcher.get(
         "/api/video",
         [],
         Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
         json =>
-        setState(_ => json |> Json.Decode.array(Decode.video))
+        dispatch(Load(json))
       );
       None;
     });
@@ -340,21 +324,10 @@ module List = {
       <>
         {selected->Belt_Option.mapWithDefault(<div />, v =>
            <Card border="dark" className="text-center">
-             <Card.Body>
-               <Player
-                 videoId={v.videoId}
-                 playerOptions=options
-                 onVideoEnd={() =>
-                   Belt_Option.flatMap(selected, vid =>
-                     nextVideo(options, vid, state)
-                   )
-                   ->Belt_Option.forEach(v => dispatch(Select(v)))
-                 }
-               />
-             </Card.Body>
+             <Card.Body> <Player videoId={v.videoId} /> </Card.Body>
            </Card>
          )}
-        <Player.Options initial=options onChange={o => setOptions(_ => o)} />
+        <Player.Options />
         <Accordion>
           <Card>
             <Accordion.Toggle _as=Card.header eventKey="0">
@@ -363,7 +336,7 @@ module List = {
             <Accordion.Collapse eventKey="0">
               <Card.Body>
                 <ListGroup>
-                  {state
+                  {videos
                    |> Array.map(v => {
                         <ListGroup.Item
                           key={string_of_int(v.id)}

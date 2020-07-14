@@ -12,12 +12,6 @@ type videoJSOptions = {
   youtube,
 };
 
-type playerOptions = {
-  loop: bool,
-  play: bool,
-  playlist: bool,
-};
-
 let initialPlayerOptions = src => {
   {
     controls: true,
@@ -66,52 +60,50 @@ let createPlayer = (videoId, setCurrentTime) => {
   ();
 };
 
-let applyOptions = (playerOptions, onVideoEnd) => {
+let applyOptions = (options: VideoStore.options, dispatch) => {
   callOnPlayer(p => {
-    p##loop(playerOptions.loop);
-    if (playerOptions.play) {
+    p##loop(options.loop);
+    if (options.play) {
       p##play();
     };
     p##off("ended");
-    p##on("ended", _ => onVideoEnd());
+    p##on("ended", _ => dispatch(VideoStore.Config.Next));
   });
 };
 
 module Options = {
   [@react.component]
-  let make = (~initial: playerOptions, ~onChange: playerOptions => unit) => {
-    let (playerOptions, setPlayerOptions) = React.useState(() => initial);
+  let make = () => {
+    open VideoStore;
+    let dispatch = Wrapper.useDispatch();
+    let options = Wrapper.useSelector(Config.Selector.options);
     let toggle = (setter, e) => {
-      let checked = ReactEvent.Form.currentTarget(e)##checked;
-      setPlayerOptions(o => {
-        let options = setter(o, checked);
-        onChange(options);
-        options;
-      });
+      dispatch(Toggle(setter(ReactEvent.Form.currentTarget(e)##checked)));
     };
+
     Bootstrap.(
-      <Card border="dark" className="text-center">
+      <Card className="text-center">
         <Card.Body>
           <ButtonGroup toggle=true>
             <ToggleButton
               _type="checkbox"
-              checked={playerOptions.play}
+              checked={options.play}
               size="sm"
-              onChange={toggle((o, play) => {...o, play})}>
+              onChange={toggle((play, o) => {...o, play})}>
               {React.string("Autoplay")}
             </ToggleButton>
             <ToggleButton
               _type="checkbox"
-              checked={playerOptions.loop}
+              checked={options.loop}
               size="sm"
-              onChange={toggle((o, loop) => {...o, loop})}>
+              onChange={toggle((loop, o) => {...o, loop})}>
               {React.string("Loop")}
             </ToggleButton>
             <ToggleButton
               _type="checkbox"
-              checked={playerOptions.playlist}
+              checked={options.playlist}
               size="sm"
-              onChange={toggle((o, playlist) => {...o, playlist})}>
+              onChange={toggle((playlist, o) => {...o, playlist})}>
               {React.string("Playlist")}
             </ToggleButton>
           </ButtonGroup>
@@ -122,12 +114,15 @@ module Options = {
 };
 
 [@react.component]
-let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
+let make = (~videoId: string) => {
+  open VideoStore;
   let (currentTime, setCurrentTime) = React.useState(() => 0);
+  let dispatch = VideoStore.Wrapper.useDispatch();
+  let options = Wrapper.useSelector(Config.Selector.options);
   React.useEffect1(
     () => {
       createPlayer(videoId, setCurrentTime);
-      applyOptions(playerOptions, onVideoEnd);
+      applyOptions(options, dispatch);
       Some(() => callOnPlayer(p => p##dispose()));
     },
     [|videoId|],
@@ -135,10 +130,10 @@ let make = (~videoId: string, ~playerOptions, ~onVideoEnd: unit => unit) => {
 
   React.useEffect1(
     () => {
-      applyOptions(playerOptions, onVideoEnd);
+      applyOptions(options, dispatch);
       None;
     },
-    [|playerOptions|],
+    [|options|],
   );
 
   <div className="container">

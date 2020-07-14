@@ -20,7 +20,9 @@ let make = () => {
       //             )
       //         | _ => <div />
       //         }}
-      <Video.List />
+      <VideoStore.Wrapper.Provider store=VideoStore.Config.store>
+        <Video.List />
+      </VideoStore.Wrapper.Provider>
     </>
   );
 };
