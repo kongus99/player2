@@ -23,14 +23,7 @@ let make = () => {
          <Player videoId={v.videoId} />
        )}
       <Player.Options />
-      <Tabs defaultActiveKey="browse" id="noanim-tab-example">
-        <Tab eventKey="browse" title="Browse"> <Video.List /> </Tab>
-        <Tab eventKey="album" title="Album" disabled={selected == None}>
-          {Belt_Option.mapWithDefault(selected, <div />, v =>
-             <Album id={v.id} />
-           )}
-        </Tab>
-      </Tabs>
+      <AppNav />
     </>
   );
 };

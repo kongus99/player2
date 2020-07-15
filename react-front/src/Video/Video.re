@@ -309,7 +309,7 @@ module Delete = {
         id,
         Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
         _ =>
-        Store.Config.fetchVideos(dispatch)
+        Store.Config.fetchVideos(false, dispatch)
       );
     };
 
@@ -330,7 +330,7 @@ module List = {
 
     let dispatch = Wrapper.useDispatch();
     React.useEffect0(() => {
-      Store.Config.fetchVideos(dispatch);
+      Store.Config.fetchVideos(false, dispatch);
       None;
     });
     Bootstrap.(

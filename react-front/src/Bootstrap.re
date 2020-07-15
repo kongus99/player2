@@ -236,7 +236,7 @@ module Tabs = {
       ~defaultActiveKey: string=?,
       ~id: string=?,
       ~mountOnEnter: bool=?,
-      ~onSelect: ReactEvent.Form.t => unit=?,
+      ~onSelect: string => unit=?,
       ~unmountOnExit: bool=?,
       ~variant: string=?,
       ~children: React.element=?

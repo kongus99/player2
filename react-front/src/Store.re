@@ -42,28 +42,34 @@ module Config = {
   type action =
     | Authorize(bool)
     | Select(video)
-    | Load(Js.Json.t)
+    | Load(bool, Js.Json.t)
     | Next
     | Toggle(options => options);
 
-  let fetchVideos = dispatch =>
+  let fetchVideos = (keepSelected, dispatch) =>
     Fetcher.get(
       "/api/video",
       [],
       Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
       json =>
-      dispatch(Load(json))
+      dispatch(Load(keepSelected, json))
     );
 
   let reducer = (state, action) =>
     switch (action) {
     | Authorize(authorized) => {...state, authorized}
     | Select(v) => {...state, selected: Some(v)}
-    | Load(json) => {
-        ...state,
-        videos: json |> Json.Decode.array(Decode.video),
-        selected: None,
-      }
+    | Load(keepSelected, json) =>
+      let videos = json |> Json.Decode.array(Decode.video);
+      if (keepSelected
+          && state.selected
+             ->Belt_Option.mapWithDefault(false, sel =>
+                 Array.exists(vid => sel.id == vid.id, videos)
+               )) {
+        {...state, videos};
+      } else {
+        {...state, videos, selected: None};
+      };
     | Next => {
         ...state,
         selected:
