@@ -21,15 +21,18 @@ class AlbumController {
     @CrossOrigin
     @GetMapping("/api/video/{videoId}/album")
     fun get(@PathVariable videoId: Int): ResponseEntity<String> {
-        val albums = dsl?.selectFrom(AlbumTable.ALBUM)
+        return dsl
+                ?.selectFrom(AlbumTable.ALBUM)
                 ?.where(AlbumTable.ALBUM.VIDEOID.eq(videoId))
-                ?.firstOrNull()
-                ?.let { ObjectMapper().writeValueAsString(Album.Album(it)) }
-                ?: "null"
-        return ResponseEntity
-                .ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(albums)
+                ?.fetch()
+                ?.map { r ->
+                    ResponseEntity
+                            .ok()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(ObjectMapper().writeValueAsString(Album.Album(r)))
+                }
+                ?.getOrNull(0)
+                ?: ResponseEntity.notFound().build()
     }
 
     @CrossOrigin

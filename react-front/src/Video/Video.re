@@ -22,8 +22,6 @@ module Modal = {
           ("videoId", string(video.videoId)),
         ])
       );
-    let album = tracks =>
-      Json.Encode.(object_([("tracksString", string(tracks))]));
   };
 
   module Save = {
@@ -40,11 +38,8 @@ module Modal = {
       let fetchAlbum = id =>
         Album.fetch(
           id,
-          album =>
-            setAlbum(_ =>
-              Belt_Option.mapWithDefault(album, "", Album.toString)
-            ),
-          Js.log,
+          _ => setAlbum(_ => ""),
+          album => setAlbum(_ => Album.toString(album)),
         );
       React.useEffect0(() => {
         video.id->Belt_Option.forEach(fetchAlbum);
@@ -74,13 +69,7 @@ module Modal = {
             },
           )
         | Some(id) =>
-          Fetcher.post(
-            "/api/video/" ++ string_of_int(id) ++ "/album",
-            Encode.album(album),
-            statusResolver("Could not save album for this video."),
-            _ =>
-            fetchAlbum(id)
-          )
+          Album.post(id, album, x => setAlert(_ => x), _ => fetchAlbum(id))
         };
       };
 
@@ -329,10 +318,7 @@ module List = {
     let videos = Wrapper.useSelector(Config.Selector.videos);
 
     let dispatch = Wrapper.useDispatch();
-    React.useEffect0(() => {
-      Store.Config.fetchVideos(false, dispatch);
-      None;
-    });
+
     Bootstrap.(
       <ListGroup>
         {videos

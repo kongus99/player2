@@ -6,12 +6,6 @@ type track = {
 
 type album = {tracks: array(track)};
 
-type state =
-  | Loading
-  | ErrorLoading
-  | Loaded(option(string), album)
-  | NotFound;
-
 module Decode = {
   let track = json =>
     Json.Decode.{
@@ -21,6 +15,11 @@ module Decode = {
     };
   let album = json =>
     Json.Decode.{tracks: json |> field("tracks", array(track))};
+};
+
+module Encode = {
+  let album = tracks =>
+    Json.Encode.(object_([("tracksString", string(tracks))]));
 };
 
 let toString = ({tracks}) => {
@@ -36,54 +35,49 @@ let toString = ({tracks}) => {
   |> String.concat("\n");
 };
 
-let fetch = (id, onSuccess, onError) =>
+let fetch = (id, onError, onSuccess) =>
   Fetcher.get(
     "/api/video/" ++ string_of_int(id) ++ "/album",
     [],
-    Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
-    json => onSuccess(json |> Json.Decode.optional(Decode.album)),
-    ~onError,
+    Fetcher.statusResolver(
+      [|(404, "Could not find album.")|],
+      onError,
+      Fetch.Response.json,
+    ),
+    json =>
+    onSuccess(json |> Decode.album)
+  );
+
+let post = (id, album, onError, onSuccess) =>
+  Fetcher.post(
+    "/api/video/" ++ string_of_int(id) ++ "/album",
+    Encode.album(album),
+    Fetcher.statusResolver(
+      [|(400, "Could not save album.")|],
+      onError,
+      Fetch.Response.text,
+    ),
+    t =>
+    onSuccess(int_of_string(t))
   );
 
 [@react.component]
-let make = (~id: int) => {
-  let (state, setState) = React.useState(() => Loading);
-  React.useEffect1(
-    () => {
-      fetch(
-        id,
-        album =>
-          setState(_ => {
-            album
-            |> Belt_Option.map(_, a => Loaded(None, a))
-            |> Belt_Option.getWithDefault(_, NotFound)
-          }),
-        _ => setState(_ => ErrorLoading),
-      );
-      None;
-    },
-    [|id|],
-  );
+let make = (~album: album) => {
+  let (title, setTitle) = React.useState(() => None);
 
-  switch (state) {
-  | Loading => React.string("Loading")
-  | ErrorLoading => React.string("Error")
-  | Loaded(title, album) =>
-    Bootstrap.(
-      <ListGroup>
-        {album.tracks
-         |> Array.map(t => {
-              <ListGroup.Item
-                key={t.title}
-                action=true
-                active={Some(t.title) == title}
-                onClick={_ => setState(_ => Loaded(Some(t.title), album))}>
-                {ReasonReact.string(t.title)}
-              </ListGroup.Item>
-            })
-         |> React.array}
-      </ListGroup>
-    )
-  | NotFound => <div />
-  };
+  Bootstrap.(
+    <ListGroup>
+      {album.tracks
+       |> Array.map(t => {
+            <ListGroup.Item
+              key={t.title}
+              action=true
+              active={Some(t.title) == title}
+              onClick={_ => setTitle(_ => Some(t.title))}>
+              {ReasonReact.string(t.title)}
+            </ListGroup.Item>
+          })
+       |> React.array}
+    </ListGroup>
+  );
 };
