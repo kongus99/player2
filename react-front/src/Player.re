@@ -60,14 +60,14 @@ let createPlayer = (videoId, setCurrentTime) => {
   ();
 };
 
-let applyOptions = (options: Store.options, dispatch) => {
+let applyOptions = (options: Store.Video.options, dispatch) => {
   callOnPlayer(p => {
     p##loop(options.loop);
     if (options.play) {
       p##play();
     };
     p##off("ended");
-    p##on("ended", _ => dispatch(Store.Config.Next));
+    p##on("ended", _ => dispatch(Store.Next));
   });
 };
 
@@ -76,7 +76,7 @@ module Options = {
   let make = () => {
     open Store;
     let dispatch = Wrapper.useDispatch();
-    let options = Wrapper.useSelector(Config.Selector.options);
+    let options = Wrapper.useSelector(Selector.options);
     let toggle = (setter, e) => {
       dispatch(Toggle(setter(ReactEvent.Form.currentTarget(e)##checked)));
     };
@@ -118,7 +118,7 @@ let make = (~videoId: string) => {
   open Store;
   let (currentTime, setCurrentTime) = React.useState(() => 0);
   let dispatch = Wrapper.useDispatch();
-  let options = Wrapper.useSelector(Config.Selector.options);
+  let options = Wrapper.useSelector(Selector.options);
   React.useEffect1(
     () => {
       createPlayer(videoId, setCurrentTime);

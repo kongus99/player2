@@ -298,7 +298,7 @@ module Delete = {
         id,
         Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
         _ =>
-        Store.Config.fetchVideos(false, dispatch)
+        Store.Video.fetch(v => dispatch(Load(false, v)))
       );
     };
 
@@ -310,12 +310,13 @@ module Delete = {
 
 module List = {
   open Store;
+  open Store.Video;
   type state = array(video);
 
   [@react.component]
   let make = () => {
-    let selected = Wrapper.useSelector(Config.Selector.selected);
-    let videos = Wrapper.useSelector(Config.Selector.videos);
+    let selected = Wrapper.useSelector(Selector.selected);
+    let videos = Wrapper.useSelector(Selector.videos);
 
     let dispatch = Wrapper.useDispatch();
 

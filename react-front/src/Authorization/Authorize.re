@@ -79,7 +79,7 @@ let make = () => {
           403,
           _ => {
             setUser(_ => Unauthorized);
-            dispatcher(Store.Config.Authorize(false));
+            dispatcher(Store.Authorize(false));
             Js.Promise.reject(Not_found);
           },
         ),
@@ -87,7 +87,7 @@ let make = () => {
       |]),
       json => {
         setUser(_ => Authorized(json |> Decode.authorized));
-        dispatcher(Store.Config.Authorize(true));
+        dispatcher(Store.Authorize(true));
       },
       ~onError=_ => (),
     );
