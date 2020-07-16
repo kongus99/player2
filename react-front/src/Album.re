@@ -1,4 +1,4 @@
-open Store.AlbumStore;
+open AlbumStore;
 let toString = ({tracks}) => {
   let formatTime = t =>
     [t / 3600, t / 60 mod 60, t mod 60]

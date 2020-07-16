@@ -36,7 +36,7 @@ module Modal = {
         );
       let (album, setAlbum) = React.useState(() => "");
       let fetchAlbum = id =>
-        Store.AlbumStore.fetch(
+        AlbumStore.fetch(
           id,
           _ => setAlbum(_ => ""),
           album => setAlbum(_ => Album.toString(album)),
@@ -69,7 +69,7 @@ module Modal = {
             },
           )
         | Some(id) =>
-          Store.AlbumStore.post(
+          AlbumStore.post(
             id,
             album,
             x => setAlert(_ => x),
@@ -303,8 +303,8 @@ module Delete = {
         id,
         Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
         _ =>
-        Store.VideoStore.fetch(v =>
-          dispatch(VideoAction(Store.VideoStore.Load(false, v)))
+        VideoStore.fetch(v =>
+          dispatch(VideoAction(VideoStore.Load(false, v)))
         )
       );
     };
