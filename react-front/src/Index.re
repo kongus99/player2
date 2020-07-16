@@ -8,20 +8,23 @@ module Nav = {
 
   [@react.component]
   let make = () => {
-    let dispatch = Store.Wrapper.useDispatch();
-    let selectedVideo = Store.Wrapper.useSelector(Store.Selector.selected);
+    open Store;
+    let dispatch = Wrapper.useDispatch();
+    let selectedVideo = Wrapper.useSelector(Selector.VideoStore.selected);
     let (tab, setTab) = React.useState(() => browseTab.eventKey);
     let (album, setAlbum) = React.useState(() => None);
 
     React.useEffect0(() => {
-      Store.Video.fetch(v => dispatch(Load(false, v)));
+      VideoStore.fetch(v =>
+        dispatch(VideoAction(VideoStore.Load(false, v)))
+      );
       None;
     });
 
     React.useEffect1(
       () => {
         Belt_Option.forEach(selectedVideo, v => {
-          Album.fetch(
+          AlbumStore.fetch(
             v.id,
             m => Belt_Option.map(m, _ => setAlbum(_ => None)),
             album => setAlbum(_ => Some(album)),
@@ -34,7 +37,9 @@ module Nav = {
 
     let onSelect = k => {
       if (k == browseTab.eventKey) {
-        Store.Video.fetch(v => dispatch(Load(true, v)));
+        VideoStore.fetch(v =>
+          dispatch(VideoAction(VideoStore.Load(true, v)))
+        );
       };
       setTab(_ => k);
     };
@@ -58,8 +63,9 @@ module Nav = {
 module App = {
   [@react.component]
   let make = () => {
-    let selected = Store.Wrapper.useSelector(Store.Selector.selected);
-    let authorized = Store.Wrapper.useSelector(Store.Selector.authorized);
+    open Store;
+    let selected = Wrapper.useSelector(Selector.VideoStore.selected);
+    let authorized = Wrapper.useSelector(Selector.authorized);
     Bootstrap.(
       <>
         <ButtonGroup>

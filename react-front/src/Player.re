@@ -1,3 +1,4 @@
+open Store;
 type source = {
   [@bs.as "type"]
   type_: string,
@@ -60,25 +61,30 @@ let createPlayer = (videoId, setCurrentTime) => {
   ();
 };
 
-let applyOptions = (options: Store.Video.options, dispatch) => {
+let applyOptions = (options: VideoStore.options, dispatch) => {
   callOnPlayer(p => {
     p##loop(options.loop);
     if (options.play) {
       p##play();
     };
     p##off("ended");
-    p##on("ended", _ => dispatch(Store.Next));
+    p##on("ended", _ => dispatch(VideoAction(VideoStore.Next)));
   });
 };
 
 module Options = {
   [@react.component]
   let make = () => {
-    open Store;
     let dispatch = Wrapper.useDispatch();
-    let options = Wrapper.useSelector(Selector.options);
+    let options = Wrapper.useSelector(Selector.VideoStore.options);
     let toggle = (setter, e) => {
-      dispatch(Toggle(setter(ReactEvent.Form.currentTarget(e)##checked)));
+      dispatch(
+        VideoAction(
+          VideoStore.Toggle(
+            setter(ReactEvent.Form.currentTarget(e)##checked),
+          ),
+        ),
+      );
     };
 
     Bootstrap.(
@@ -115,10 +121,9 @@ module Options = {
 
 [@react.component]
 let make = (~videoId: string) => {
-  open Store;
   let (currentTime, setCurrentTime) = React.useState(() => 0);
   let dispatch = Wrapper.useDispatch();
-  let options = Wrapper.useSelector(Selector.options);
+  let options = Wrapper.useSelector(Selector.VideoStore.options);
   React.useEffect1(
     () => {
       createPlayer(videoId, setCurrentTime);

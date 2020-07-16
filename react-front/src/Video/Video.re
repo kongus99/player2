@@ -36,7 +36,7 @@ module Modal = {
         );
       let (album, setAlbum) = React.useState(() => "");
       let fetchAlbum = id =>
-        Album.fetch(
+        Store.AlbumStore.fetch(
           id,
           _ => setAlbum(_ => ""),
           album => setAlbum(_ => Album.toString(album)),
@@ -69,7 +69,12 @@ module Modal = {
             },
           )
         | Some(id) =>
-          Album.post(id, album, x => setAlert(_ => x), _ => fetchAlbum(id))
+          Store.AlbumStore.post(
+            id,
+            album,
+            x => setAlert(_ => x),
+            _ => fetchAlbum(id),
+          )
         };
       };
 
@@ -298,7 +303,9 @@ module Delete = {
         id,
         Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
         _ =>
-        Store.Video.fetch(v => dispatch(Load(false, v)))
+        Store.VideoStore.fetch(v =>
+          dispatch(VideoAction(Store.VideoStore.Load(false, v)))
+        )
       );
     };
 
@@ -310,13 +317,13 @@ module Delete = {
 
 module List = {
   open Store;
-  open Store.Video;
+  open VideoStore;
   type state = array(video);
 
   [@react.component]
   let make = () => {
-    let selected = Wrapper.useSelector(Selector.selected);
-    let videos = Wrapper.useSelector(Selector.videos);
+    let selected = Wrapper.useSelector(Selector.VideoStore.selected);
+    let videos = Wrapper.useSelector(Selector.VideoStore.loaded);
 
     let dispatch = Wrapper.useDispatch();
 
@@ -330,7 +337,7 @@ module List = {
                 active={Belt_Option.mapWithDefault(selected, false, p =>
                   p.id == v.id
                 )}
-                onClick={_ => dispatch(Select(v))}>
+                onClick={_ => dispatch(VideoAction(Select(v)))}>
                 {ReasonReact.string(v.title)}
               </ListGroup.Item>
             })
