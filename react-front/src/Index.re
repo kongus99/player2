@@ -12,10 +12,10 @@ module Nav = {
     let dispatch = Wrapper.useDispatch();
     let selectedVideo = Wrapper.useSelector(Selector.VideoStore.selected);
     let (tab, setTab) = React.useState(() => browseTab.eventKey);
-    let (album, setAlbum) = React.useState(() => None);
+    let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
 
     React.useEffect0(() => {
-      VideoStore.fetch(v =>
+      VideoStore.Fetcher.fetch(v =>
         dispatch(VideoAction(VideoStore.Load(false, v)))
       );
       None;
@@ -24,10 +24,13 @@ module Nav = {
     React.useEffect1(
       () => {
         Belt_Option.forEach(selectedVideo, v => {
-          AlbumStore.fetch(
+          AlbumStore.Fetcher.fetch(
             v.id,
-            m => Belt_Option.map(m, _ => setAlbum(_ => None)),
-            album => setAlbum(_ => Some(album)),
+            m =>
+              Belt_Option.map(m, _ =>
+                dispatch(AlbumAction(AlbumStore.Load([||])))
+              ),
+            tracks => dispatch(AlbumAction(AlbumStore.Load(tracks))),
           )
         });
         None;
@@ -37,7 +40,7 @@ module Nav = {
 
     let onSelect = k => {
       if (k == browseTab.eventKey) {
-        VideoStore.fetch(v =>
+        VideoStore.Fetcher.fetch(v =>
           dispatch(VideoAction(VideoStore.Load(true, v)))
         );
       };
@@ -52,8 +55,8 @@ module Nav = {
         <Tab
           eventKey={albumTab.eventKey}
           title={albumTab.title}
-          disabled={album == None}>
-          {Belt_Option.mapWithDefault(album, <div />, a => <Album album=a />)}
+          disabled={Belt_Array.length(tracks) == 0}>
+          <Album />
         </Tab>
       </Tabs>
     );

@@ -1,5 +1,4 @@
-open AlbumStore;
-let toString = ({tracks}) => {
+let toString = (tracks: array(AlbumStore.track)) => {
   let formatTime = t =>
     [t / 3600, t / 60 mod 60, t mod 60]
     |> List.map(t =>
@@ -13,12 +12,15 @@ let toString = ({tracks}) => {
 };
 
 [@react.component]
-let make = (~album: album) => {
+let make = () => {
+  open Store;
+  open AlbumStore;
   let (title, setTitle) = React.useState(() => None);
+  let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
 
   Bootstrap.(
     <ListGroup>
-      {album.tracks
+      {tracks
        |> Array.map(t => {
             <ListGroup.Item
               key={t.title}

@@ -36,10 +36,10 @@ module Modal = {
         );
       let (album, setAlbum) = React.useState(() => "");
       let fetchAlbum = id =>
-        AlbumStore.fetch(
+        AlbumStore.Fetcher.fetch(
           id,
           _ => setAlbum(_ => ""),
-          album => setAlbum(_ => Album.toString(album)),
+          tracks => setAlbum(_ => Album.toString(tracks)),
         );
       React.useEffect0(() => {
         video.id->Belt_Option.forEach(fetchAlbum);
@@ -69,7 +69,7 @@ module Modal = {
             },
           )
         | Some(id) =>
-          AlbumStore.post(
+          AlbumStore.Fetcher.post(
             id,
             album,
             x => setAlert(_ => x),
@@ -303,7 +303,7 @@ module Delete = {
         id,
         Fetcher.statusResolver([||], Js.log, Fetch.Response.text),
         _ =>
-        VideoStore.fetch(v =>
+        VideoStore.Fetcher.fetch(v =>
           dispatch(VideoAction(VideoStore.Load(false, v)))
         )
       );

@@ -22,29 +22,6 @@ type action =
   | Next
   | Toggle(options => options);
 
-module Decode = {
-  let video = json =>
-    Json.Decode.{
-      id: json |> field("id", int),
-      title: json |> field("title", string),
-      videoId: json |> field("videoId", string),
-    };
-};
-
-let next = ({playlist, loop}, v, videos) => {
-  playlist
-    ? Array_Helper.find(~cyclic=loop, e => e.id == v.id, videos) : Some(v);
-};
-
-let fetch = onSuccess =>
-  Fetcher.get(
-    "/api/video",
-    [],
-    Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
-    json =>
-    onSuccess(json |> Json.Decode.array(Decode.video))
-  );
-
 let initial = {
   selected: None,
   loaded: [||],
@@ -68,11 +45,37 @@ let reducer = (state, action) =>
     } else {
       {...state, loaded, selected: None};
     }
-  | Next => {
+  | Next =>
+    let next = ({playlist, loop}, v, videos) => {
+      playlist
+        ? Array_Helper.find(~cyclic=loop, e => e.id == v.id, videos)
+        : Some(v);
+    };
+    {
       ...state,
       selected:
         state.selected
         ->Belt_Option.flatMap(v => next(state.options, v, state.loaded)),
-    }
+    };
   | Toggle(f) => {...state, options: f(state.options)}
   };
+
+module Fetcher = {
+  module Decode = {
+    let video = json =>
+      Json.Decode.{
+        id: json |> field("id", int),
+        title: json |> field("title", string),
+        videoId: json |> field("videoId", string),
+      };
+  };
+
+  let fetch = onSuccess =>
+    Fetcher.get(
+      "/api/video",
+      [],
+      Fetcher.statusResolver([||], _ => (), Fetch.Response.json),
+      json =>
+      onSuccess(json |> Json.Decode.array(Decode.video))
+    );
+};
