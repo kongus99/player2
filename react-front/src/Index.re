@@ -55,7 +55,7 @@ module Nav = {
         <Tab
           eventKey={albumTab.eventKey}
           title={albumTab.title}
-          disabled={Belt_Array.length(tracks) == 0}>
+          disabled={Belt_MapInt.isEmpty(tracks)}>
           <Album />
         </Tab>
       </Tabs>

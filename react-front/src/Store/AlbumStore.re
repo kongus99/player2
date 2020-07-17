@@ -4,16 +4,31 @@ type track = {
   _end: option(int),
 };
 
-type state = {tracks: array(track)};
+type state = {
+  tracks: Belt_MapInt.t(track),
+  selected: Belt_SetInt.t,
+};
 
 type action =
-  | Load(array(track));
+  | Load(array(track))
+  | Toggle(int);
 
-let initial = {tracks: [||]};
+let initial = {tracks: Belt_MapInt.empty, selected: Belt_SetInt.empty};
 
 let reducer = (state, action) =>
   switch (action) {
-  | Load(tracks) => {...state, tracks}
+  | Load(tracks) => {
+      tracks:
+        Belt_MapInt.fromArray(Belt_Array.map(tracks, t => (t.start, t))),
+      selected: Belt_Array.map(tracks, t => t.start) |> Belt_SetInt.fromArray,
+    }
+  | Toggle(start) => {
+      ...state,
+      selected:
+        Belt_SetInt.has(state.selected, start)
+          ? Belt_SetInt.remove(state.selected, start)
+          : Belt_SetInt.add(state.selected, start),
+    }
   };
 
 module Fetcher = {

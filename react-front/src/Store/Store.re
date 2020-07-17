@@ -42,6 +42,7 @@ module Implementation = {
     };
     module AlbumStore = {
       let tracks = state => state.albumState.tracks;
+      let selected = state => state.albumState.selected;
     };
   };
 };

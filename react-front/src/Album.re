@@ -15,18 +15,20 @@ let toString = (tracks: array(AlbumStore.track)) => {
 let make = () => {
   open Store;
   open AlbumStore;
-  let (title, setTitle) = React.useState(() => None);
+  let dsipatch = Wrapper.useDispatch();
+  let selected = Wrapper.useSelector(Selector.AlbumStore.selected);
   let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
 
   Bootstrap.(
     <ListGroup>
       {tracks
-       |> Array.map(t => {
+       |> Belt_MapInt.toArray
+       |> Array.map(((_, t)) => {
             <ListGroup.Item
-              key={t.title}
+              key={string_of_int(t.start)}
               action=true
-              active={Some(t.title) == title}
-              onClick={_ => setTitle(_ => Some(t.title))}>
+              active={Belt_SetInt.has(selected, t.start)}
+              onClick={_ => dsipatch(AlbumAction(Toggle(t.start)))}>
               {ReasonReact.string(t.title)}
             </ListGroup.Item>
           })
