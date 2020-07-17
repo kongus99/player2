@@ -1,33 +1,45 @@
 type track = {
   title: string,
   start: int,
-  _end: option(int),
+  _end: int,
+  selected: bool,
 };
+
+let tempEnd = Int32.max_int |> Int32.to_int;
 
 type state = {
   tracks: Belt_MapInt.t(track),
-  selected: Belt_SetInt.t,
+  active: option(int),
 };
 
 type action =
   | Load(array(track))
-  | Toggle(int);
+  | Toggle(int)
+  | UpdateTime(int);
 
-let initial = {tracks: Belt_MapInt.empty, selected: Belt_SetInt.empty};
+let initial = {tracks: Belt_MapInt.empty, active: None};
 
 let reducer = (state, action) =>
   switch (action) {
   | Load(tracks) => {
       tracks:
         Belt_MapInt.fromArray(Belt_Array.map(tracks, t => (t.start, t))),
-      selected: Belt_Array.map(tracks, t => t.start) |> Belt_SetInt.fromArray,
+      active: None,
     }
   | Toggle(start) => {
       ...state,
-      selected:
-        Belt_SetInt.has(state.selected, start)
-          ? Belt_SetInt.remove(state.selected, start)
-          : Belt_SetInt.add(state.selected, start),
+      tracks:
+        Belt_MapInt.update(state.tracks, start, mt =>
+          Belt_Option.map(mt, t => {...t, selected: !t.selected})
+        ),
+    }
+  | UpdateTime(time) => {
+      ...state,
+      active:
+        Belt_MapInt.findFirstBy(state.tracks, (_, {start, _end}) =>
+          start <= time && time <= _end
+        )
+        ->Belt_Option.map(((_, {start})) => start),
     }
   };
 
@@ -37,7 +49,10 @@ module Fetcher = {
       Json.Decode.{
         title: json |> field("title", string),
         start: json |> field("start", int),
-        _end: json |> field("end", optional(int)),
+        _end:
+          (json |> field("end", optional(int)))
+          ->Belt_Option.getWithDefault(tempEnd),
+        selected: true,
       };
   };
 

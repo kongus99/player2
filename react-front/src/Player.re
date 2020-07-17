@@ -41,7 +41,7 @@ let callOnPlayer = f => {
   };
 };
 
-let createPlayer = (videoId, setCurrentTime) => {
+let createPlayer = (videoId, dispatch) => {
   callOnPlayer(p => p##dispose());
   let container = document##getElementById("mainPlayer");
   let playerNode = document##createElement("video");
@@ -57,7 +57,11 @@ let createPlayer = (videoId, setCurrentTime) => {
     );
   let () = player##responsive(true);
   let () =
-    player##on("timeupdate", () => {setCurrentTime(player##currentTime())});
+    player##on("timeupdate", () => {
+      dispatch(
+        Store.AlbumAction(AlbumStore.UpdateTime(player##currentTime())),
+      )
+    });
   ();
 };
 
@@ -121,12 +125,11 @@ module Options = {
 
 [@react.component]
 let make = (~videoId: string) => {
-  let (currentTime, setCurrentTime) = React.useState(() => 0);
   let dispatch = Wrapper.useDispatch();
   let options = Wrapper.useSelector(Selector.VideoStore.options);
   React.useEffect1(
     () => {
-      createPlayer(videoId, setCurrentTime);
+      createPlayer(videoId, dispatch);
       applyOptions(options, dispatch);
       Some(() => callOnPlayer(p => p##dispose()));
     },
@@ -144,14 +147,6 @@ let make = (~videoId: string) => {
     <Card className="text-center">
       <Card.Body>
         <div className="container">
-          <span className="row">
-            {React.string(
-               "Current Time: "
-               ++ {
-                 string_of_int(currentTime);
-               },
-             )}
-          </span>
           <div id="mainPlayer" className="row" />
         </div>
       </Card.Body>

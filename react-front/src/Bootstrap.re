@@ -168,6 +168,7 @@ module ListGroup = {
       (
         ~action: bool=?,
         ~active: bool=?,
+        ~variant: string=?,
         ~onClick: ReactEvent.Mouse.t => unit=?,
         ~children: React.element
       ) =>

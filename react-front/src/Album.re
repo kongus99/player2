@@ -16,9 +16,17 @@ let make = () => {
   open Store;
   open AlbumStore;
   let dsipatch = Wrapper.useDispatch();
-  let selected = Wrapper.useSelector(Selector.AlbumStore.selected);
   let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
+  let active = Wrapper.useSelector(Selector.AlbumStore.active);
 
+  let variant = track =>
+    if (Belt_Option.mapWithDefault(active, false, a => track.start == a)) {
+      "success";
+    } else if (track.selected) {
+      "primary";
+    } else {
+      "secondary";
+    };
   Bootstrap.(
     <ListGroup>
       {tracks
@@ -27,7 +35,7 @@ let make = () => {
             <ListGroup.Item
               key={string_of_int(t.start)}
               action=true
-              active={Belt_SetInt.has(selected, t.start)}
+              variant={variant(t)}
               onClick={_ => dsipatch(AlbumAction(Toggle(t.start)))}>
               {ReasonReact.string(t.title)}
             </ListGroup.Item>
