@@ -39,9 +39,11 @@ module Button = {
   [@bs.module "react-bootstrap/Button"] [@react.component]
   external make:
     (
+      ~active: bool=?,
       ~variant: string=?,
-      ~onClick: unit => unit=?,
+      ~onClick: ReactEvent.Form.t => unit=?,
       ~_type: string=?,
+      ~className: string=?,
       ~children: React.element=?
     ) =>
     React.element =
@@ -51,7 +53,12 @@ module Button = {
 module ButtonGroup = {
   [@bs.module "react-bootstrap/ButtonGroup"] [@react.component]
   external make:
-    (~toggle: bool=?, ~className: string=?, ~children: React.element=?) =>
+    (
+      ~toggle: bool=?,
+      ~size: string=?,
+      ~className: string=?,
+      ~children: React.element=?
+    ) =>
     React.element =
     "default";
 };
@@ -270,6 +277,7 @@ module ToggleButton = {
       ~size: string=?,
       ~value: 'a=?,
       ~variant: string=?,
+      ~className: string=?,
       ~onChange: ReactEvent.Form.t => unit=?,
       ~children: React.element=?
     ) =>

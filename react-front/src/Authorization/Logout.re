@@ -2,7 +2,7 @@
 let make = (~onLogout: string => unit) => {
   Bootstrap.(
     <Button
-      onClick={() => {
+      onClick={_ => {
         Fetcher.post(
           "/api/logout",
           Js.Json.null,

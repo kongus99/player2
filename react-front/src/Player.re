@@ -81,44 +81,34 @@ module Options = {
   let make = () => {
     let dispatch = Wrapper.useDispatch();
     let options = Wrapper.useSelector(Selector.VideoStore.options);
-    let toggle = (setter, e) => {
-      dispatch(
-        VideoAction(
-          VideoStore.Toggle(
-            setter(ReactEvent.Form.currentTarget(e)##checked),
-          ),
-        ),
-      );
+    let toggle = (options, _) => {
+      dispatch(VideoAction(VideoStore.Toggle(options)));
     };
 
     Bootstrap.(
-      <Card className="text-center">
-        <Card.Body>
-          <ButtonGroup toggle=true>
-            <ToggleButton
-              _type="checkbox"
-              checked={options.play}
-              size="sm"
-              onChange={toggle((play, o) => {...o, play})}>
-              {React.string("Autoplay")}
-            </ToggleButton>
-            <ToggleButton
-              _type="checkbox"
-              checked={options.loop}
-              size="sm"
-              onChange={toggle((loop, o) => {...o, loop})}>
-              {React.string("Loop")}
-            </ToggleButton>
-            <ToggleButton
-              _type="checkbox"
-              checked={options.playlist}
-              size="sm"
-              onChange={toggle((playlist, o) => {...o, playlist})}>
-              {React.string("Playlist")}
-            </ToggleButton>
-          </ButtonGroup>
-        </Card.Body>
-      </Card>
+      <ButtonGroup size="sm" className="btn-block" toggle=true>
+        <Button
+          _type="checkbox"
+          active={options.play}
+          variant="outline-primary"
+          onClick={toggle(o => {...o, play: !o.play})}>
+          {React.string("Autoplay")}
+        </Button>
+        <Button
+          _type="checkbox"
+          active={options.loop}
+          variant="outline-primary"
+          onClick={toggle(o => {...o, loop: !o.loop})}>
+          {React.string("Loop")}
+        </Button>
+        <Button
+          _type="checkbox"
+          active={options.playlist}
+          variant="outline-primary"
+          onClick={toggle(o => {...o, playlist: !o.playlist})}>
+          {React.string("Playlist")}
+        </Button>
+      </ButtonGroup>
     );
   };
 };

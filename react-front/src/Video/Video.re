@@ -247,7 +247,7 @@ module Modal = {
       Bootstrap.(
         <>
           <Button
-            onClick={() => {
+            onClick={_ => {
               setState(_ => Unverified);
               setModalVisible(_ => true);
             }}>
@@ -276,7 +276,7 @@ module Modal = {
       let (modalVisible, setModalVisible) = React.useState(() => false);
       Bootstrap.(
         <>
-          <Button onClick={() => setModalVisible(_ => true)}>
+          <Button onClick={_ => setModalVisible(_ => true)}>
             {React.string("Edit")}
           </Button>
           <Modal

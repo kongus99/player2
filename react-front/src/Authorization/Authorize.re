@@ -29,7 +29,7 @@ module Authorize = {
 
     Bootstrap.(
       <>
-        <Button onClick={() => {setModalVisible(_ => true)}}>
+        <Button onClick={_ => {setModalVisible(_ => true)}}>
           {React.string("Login")}
         </Button>
         <Modal
