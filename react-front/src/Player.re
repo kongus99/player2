@@ -125,8 +125,11 @@ module Options = {
 
 [@react.component]
 let make = (~videoId: string) => {
+  open AlbumStore;
   let dispatch = Wrapper.useDispatch();
   let options = Wrapper.useSelector(Selector.VideoStore.options);
+  let activeTrack = Wrapper.useSelector(Selector.AlbumStore.active);
+
   React.useEffect1(
     () => {
       createPlayer(videoId, dispatch);
@@ -134,6 +137,25 @@ let make = (~videoId: string) => {
       Some(() => callOnPlayer(p => p##dispose()));
     },
     [|videoId|],
+  );
+
+  React.useEffect1(
+    () => {
+      callOnPlayer(p =>
+        Belt_Option.forEach(
+          activeTrack,
+          track => {
+            let time = p##currentTime(Js.Undefined.empty);
+            if (time < track.start || time > track._end) {
+              let _ = p##currentTime(Js.Undefined.return(track.start));
+              ();
+            };
+          },
+        )
+      );
+      None;
+    },
+    [|activeTrack|],
   );
 
   React.useEffect1(

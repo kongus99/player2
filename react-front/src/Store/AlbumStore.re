@@ -9,7 +9,7 @@ let tempEnd = Int32.max_int |> Int32.to_int;
 
 type state = {
   tracks: Belt_MapInt.t(track),
-  active: option(int),
+  active: option(track),
 };
 
 type action =
@@ -19,6 +19,18 @@ type action =
 
 let initial = {tracks: Belt_MapInt.empty, active: None};
 
+let expectedTrack = (time, {tracks}) => {
+  let resPair =
+    switch (
+      Belt_MapInt.findFirstBy(tracks, (_, {start, _end, selected}) =>
+        selected && (start >= time || time <= _end)
+      )
+    ) {
+    | None => Belt_MapInt.findFirstBy(tracks, (_, {selected}) => selected)
+    | x => x
+    };
+  resPair->Belt_Option.map(((_, t)) => t);
+};
 let reducer = (state, action) =>
   switch (action) {
   | Load(tracks) => {
@@ -33,14 +45,7 @@ let reducer = (state, action) =>
           Belt_Option.map(mt, t => {...t, selected: !t.selected})
         ),
     }
-  | UpdateTime(time) => {
-      ...state,
-      active:
-        Belt_MapInt.findFirstBy(state.tracks, (_, {start, _end}) =>
-          start <= time && time <= _end
-        )
-        ->Belt_Option.map(((_, {start})) => start),
-    }
+  | UpdateTime(time) => {...state, active: expectedTrack(time, state)}
   };
 
 module Fetcher = {

@@ -20,7 +20,7 @@ let make = () => {
   let active = Wrapper.useSelector(Selector.AlbumStore.active);
 
   let variant = track =>
-    if (Belt_Option.mapWithDefault(active, false, a => track.start == a)) {
+    if (Belt_Option.mapWithDefault(active, false, a => track.start == a.start)) {
       "success";
     } else if (track.selected) {
       "primary";
