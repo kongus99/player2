@@ -23,7 +23,9 @@ type action =
   | Toggle(int)
   | UpdateTime(int)
   | Next
-  | Prev;
+  | Prev
+  | First
+  | Last;
 
 let initial = {tracks: Belt_MapInt.empty, selected: [||], playing: Inactive};
 
@@ -125,6 +127,8 @@ let reducer = (state, action) =>
         | Active(t) => prevTrack(t.start, state)
         },
     }
+  | First => {...state, playing: firstTrack(state)}
+  | Last => {...state, playing: lastTrack(state)}
   };
 
 module Fetcher = {

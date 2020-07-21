@@ -19,11 +19,18 @@ module Controls = {
 
     Bootstrap.(
       <ButtonGroup size="sm" className="btn-block">
+        <Button
+          variant="primary" onClick={_ => dispatch(AlbumAction(First))}>
+          {React.string("|<")}
+        </Button>
         <Button variant="primary" onClick={_ => dispatch(AlbumAction(Prev))}>
           {React.string("<<")}
         </Button>
         <Button variant="primary" onClick={_ => dispatch(AlbumAction(Next))}>
           {React.string(">>")}
+        </Button>
+        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Last))}>
+          {React.string(">|")}
         </Button>
       </ButtonGroup>
     );

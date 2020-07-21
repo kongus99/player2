@@ -50,6 +50,7 @@ module Nav = {
     Bootstrap.(
       <Tabs activeKey=tab onSelect id="nav-tabs">
         <Tab eventKey={browseTab.eventKey} title={browseTab.title}>
+          <Player.Options />
           <Video.List />
         </Tab>
         <Tab
@@ -93,7 +94,6 @@ module App = {
         {Belt_Option.mapWithDefault(selected, <div />, v =>
            <Player videoId={v.videoId} />
          )}
-        <Player.Options />
         <Nav />
       </>
     );
