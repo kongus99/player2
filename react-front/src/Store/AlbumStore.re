@@ -20,7 +20,7 @@ type state = {
 
 type action =
   | Load(array(track))
-  | Toggle(int)
+  | Toggle(option(int))
   | UpdateTime(int)
   | Next
   | Prev
@@ -78,16 +78,20 @@ let reducer = (state, action) =>
       playing: Inactive,
     };
   | Toggle(start) =>
+    let toggle = (t: track) => {...t, selected: !t.selected};
     let tracks =
-      Belt_MapInt.update(state.tracks, start, mt =>
-        Belt_Option.map(mt, t => {...t, selected: !t.selected})
-      );
-    {
-      ...state,
-      tracks,
-      selected:
-        Belt_MapInt.keep(tracks, (_, {selected}) => selected)
-        |> Belt_MapInt.valuesToArray,
+      switch (start) {
+      | Some(s) =>
+        Belt_MapInt.update(state.tracks, s, mt => Belt_Option.map(mt, toggle))
+      | None => Belt_MapInt.map(state.tracks, toggle)
+      };
+    let selected =
+      Belt_MapInt.keep(tracks, (_, {selected}) => selected)
+      |> Belt_MapInt.valuesToArray;
+    if (Belt_Array.size(selected) > 0) {
+      {tracks, selected, playing: Inactive};
+    } else {
+      state;
     };
   | UpdateTime(time) => {
       ...state,

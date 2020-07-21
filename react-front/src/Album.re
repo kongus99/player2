@@ -18,21 +18,31 @@ module Controls = {
     let dispatch = Wrapper.useDispatch();
 
     Bootstrap.(
-      <ButtonGroup size="sm" className="btn-block">
-        <Button
-          variant="primary" onClick={_ => dispatch(AlbumAction(First))}>
-          {React.string("|<")}
-        </Button>
-        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Prev))}>
-          {React.string("<<")}
-        </Button>
-        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Next))}>
-          {React.string(">>")}
-        </Button>
-        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Last))}>
-          {React.string(">|")}
-        </Button>
-      </ButtonGroup>
+      <>
+        <ButtonGroup size="sm" className="btn-block">
+          <Button
+            variant="primary" onClick={_ => dispatch(AlbumAction(First))}>
+            {React.string("|<")}
+          </Button>
+          <Button
+            variant="primary" onClick={_ => dispatch(AlbumAction(Prev))}>
+            {React.string("<<")}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={_ => dispatch(AlbumAction(Toggle(None)))}>
+            {React.string("Toggle")}
+          </Button>
+          <Button
+            variant="primary" onClick={_ => dispatch(AlbumAction(Next))}>
+            {React.string(">>")}
+          </Button>
+          <Button
+            variant="primary" onClick={_ => dispatch(AlbumAction(Last))}>
+            {React.string(">|")}
+          </Button>
+        </ButtonGroup>
+      </>
     );
   };
 };
@@ -64,7 +74,7 @@ let make = () => {
               key={string_of_int(t.start)}
               action=true
               variant={variant(t)}
-              onClick={_ => dsipatch(AlbumAction(Toggle(t.start)))}>
+              onClick={_ => dsipatch(AlbumAction(Toggle(Some(t.start))))}>
               {ReasonReact.string(t.title)}
             </ListGroup.Item>
           })
