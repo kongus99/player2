@@ -1,4 +1,4 @@
-let find = (~cyclic=false, condition, array) =>
+let next = (~cyclic=false, condition, array) =>
   array
   ->Belt_Array.getIndexBy(condition)
   ->Belt_Option.flatMap(i => {

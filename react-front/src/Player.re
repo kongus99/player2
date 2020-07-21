@@ -118,7 +118,7 @@ let make = (~videoId: string) => {
   open AlbumStore;
   let dispatch = Wrapper.useDispatch();
   let options = Wrapper.useSelector(Selector.VideoStore.options);
-  let activeTrack = Wrapper.useSelector(Selector.AlbumStore.active);
+  let playingTrack = Wrapper.useSelector(Selector.AlbumStore.playing);
 
   React.useEffect1(
     () => {
@@ -132,20 +132,19 @@ let make = (~videoId: string) => {
   React.useEffect1(
     () => {
       callOnPlayer(p =>
-        Belt_Option.forEach(
-          activeTrack,
-          track => {
-            let time = p##currentTime(Js.Undefined.empty);
-            if (time < track.start || time > track._end) {
-              let _ = p##currentTime(Js.Undefined.return(track.start));
-              ();
-            };
-          },
-        )
+        switch (playingTrack) {
+        | Seeking(t) =>
+          let time = p##currentTime(Js.Undefined.empty);
+          if (!isPlaying(time, t)) {
+            let _ = p##currentTime(Js.Undefined.return(t.start));
+            ();
+          };
+        | _ => ()
+        }
       );
       None;
     },
-    [|activeTrack|],
+    [|playingTrack|],
   );
 
   React.useEffect1(

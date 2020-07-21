@@ -48,7 +48,7 @@ let reducer = (state, action) =>
   | Next =>
     let next = ({playlist, loop}, v, videos) => {
       playlist
-        ? Array_Helper.find(~cyclic=loop, e => e.id == v.id, videos)
+        ? Array_Helper.next(~cyclic=loop, e => e.id == v.id, videos)
         : Some(v);
     };
     {

@@ -42,7 +42,7 @@ module Implementation = {
     };
     module AlbumStore = {
       let tracks = state => state.albumState.tracks;
-      let active = state => state.albumState.active;
+      let playing = state => state.albumState.playing;
     };
   };
 };

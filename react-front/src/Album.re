@@ -10,6 +10,25 @@ let toString = (tracks: array(AlbumStore.track)) => {
   ->Belt_List.fromArray
   |> String.concat("\n");
 };
+module Controls = {
+  [@react.component]
+  let make = () => {
+    open Store;
+    open AlbumStore;
+    let dispatch = Wrapper.useDispatch();
+
+    Bootstrap.(
+      <ButtonGroup size="sm" className="btn-block">
+        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Prev))}>
+          {React.string("<<")}
+        </Button>
+        <Button variant="primary" onClick={_ => dispatch(AlbumAction(Next))}>
+          {React.string(">>")}
+        </Button>
+      </ButtonGroup>
+    );
+  };
+};
 
 [@react.component]
 let make = () => {
@@ -17,10 +36,12 @@ let make = () => {
   open AlbumStore;
   let dsipatch = Wrapper.useDispatch();
   let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
-  let active = Wrapper.useSelector(Selector.AlbumStore.active);
+  let playing = Wrapper.useSelector(Selector.AlbumStore.playing);
 
   let variant = track =>
-    if (Belt_Option.mapWithDefault(active, false, a => track.start == a.start)) {
+    if (Belt_Option.mapWithDefault(getTrack(playing), false, a =>
+          track.start == a.start
+        )) {
       "success";
     } else if (track.selected) {
       "primary";
