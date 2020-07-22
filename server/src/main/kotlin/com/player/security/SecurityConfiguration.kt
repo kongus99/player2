@@ -40,7 +40,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
                 .antMatchers(POST, "/api/user").permitAll()
                 .antMatchers(GET, "/api/**").permitAll()
                 .antMatchers(GET, "/").permitAll()
-                .antMatchers(GET, "/**").permitAll()
+                .antMatchers(GET, "/*.css").permitAll()
+                .antMatchers(GET, "/*.js").permitAll()
                 .anyRequest().authenticated()
         //http
         http.requiresChannel()
