@@ -103,11 +103,8 @@ tasks.withType<KotlinCompile> {
     dependsOn("buildMapping")
 }
 tasks.getByName<BootJar>("bootJar") {
-    dependsOn(":elm:uglify")
-    from("../elm/index.html") {
+    dependsOn(":react-front:parcel")
+    from("../react-front/lib/packed") {
         into("static")
-    }
-    from("../elm/lib") {
-        into("static/lib")
     }
 }
