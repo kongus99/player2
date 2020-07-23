@@ -343,9 +343,12 @@ module List = {
               <ListGroup.Item
                 key={string_of_int(v.id)}
                 action=true
-                active={Belt_Option.mapWithDefault(selected, false, p =>
-                  p.id == v.id
-                )}
+                variant={
+                  Belt_Option.mapWithDefault(selected, false, p =>
+                    p.id == v.id
+                  )
+                    ? "success" : ""
+                }
                 onClick={_ => dispatch(VideoAction(Select(v)))}>
                 {ReasonReact.string(v.title)}
               </ListGroup.Item>

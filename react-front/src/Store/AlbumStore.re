@@ -76,22 +76,37 @@ let reducer = (state, action) => {
   let generateSelected = tracks =>
     Belt_MapInt.keep(tracks, (_, {selected}: track) => selected)
     |> Belt_MapInt.valuesToArray;
+  let toggle = (t: track) => {...t, selected: !t.selected};
+
   switch (action) {
   | Load(received) =>
     let tracks =
       Belt_MapInt.fromArray(Belt_Array.map(received, t => (t.start, t)));
     {tracks, selected: generateSelected(tracks), playing: Inactive};
   | Toggle(start) =>
-    let toggle = (t: track) => {...t, selected: !t.selected};
-    let tracks =
+    let (playing, tracks) = {
       switch (start) {
-      | Some(s) =>
-        Belt_MapInt.update(state.tracks, s, mt => Belt_Option.map(mt, toggle))
-      | None => Belt_MapInt.map(state.tracks, toggle)
+      | Some(s) => (
+          mapTrack(
+            (t, st) => t.start == s ? nextTrack(t, st) : st.playing,
+            state.playing,
+          ),
+          Belt_MapInt.update(state.tracks, s, mt =>
+            Belt_Option.map(mt, toggle)
+          ),
+        )
+      | None =>
+        let s =
+          getTrack(state.playing)
+          ->Belt_Option.mapWithDefault(-1, t => t.start);
+        let tracks =
+          Belt_MapInt.map(state.tracks, t => t.start == s ? t : toggle(t));
+        (state.playing, tracks);
       };
+    };
     let selected = generateSelected(tracks);
     if (Belt_Array.size(selected) > 0) {
-      {tracks, selected, playing: Inactive};
+      {tracks, selected, playing};
     } else {
       state;
     };
