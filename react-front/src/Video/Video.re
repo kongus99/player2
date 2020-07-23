@@ -27,6 +27,15 @@ module Modal = {
   module Save = {
     let urlPrefix = "https://www.youtube.com/watch?v=";
 
+    let toString = (tracks: array(AlbumStore.track)) => {
+      tracks
+      ->Belt_Array.map(t => {
+          Helper.Time.formatSeconds(t.start) ++ " " ++ t.title
+        })
+      ->Belt_List.fromArray
+      |> String.concat("\n");
+    };
+
     [@react.component]
     let make = (~initial: video) => {
       let (alert, setAlert) = React.useState(() => None);
@@ -39,7 +48,7 @@ module Modal = {
         AlbumStore.Fetcher.fetch(
           id,
           _ => setAlbum(_ => ""),
-          tracks => setAlbum(_ => Album.toString(tracks)),
+          tracks => setAlbum(_ => toString(tracks)),
         );
       React.useEffect0(() => {
         video.id->Belt_Option.forEach(fetchAlbum);

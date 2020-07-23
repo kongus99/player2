@@ -1,15 +1,3 @@
-let toString = (tracks: array(AlbumStore.track)) => {
-  let formatTime = t =>
-    [t / 3600, t / 60 mod 60, t mod 60]
-    |> List.map(t =>
-         [t / 10, t mod 10] |> List.map(string_of_int) |> String.concat("")
-       )
-    |> String.concat(":");
-  tracks
-  ->Belt_Array.map(t => {formatTime(t.start) ++ " " ++ t.title})
-  ->Belt_List.fromArray
-  |> String.concat("\n");
-};
 module Controls = {
   [@react.component]
   let make = () => {
@@ -75,7 +63,11 @@ let make = () => {
               action=true
               variant={variant(t)}
               onClick={_ => dsipatch(AlbumAction(Toggle(Some(t.start))))}>
-              {ReasonReact.string(t.title)}
+              {ReasonReact.string(
+                 t.title
+                 ++ " : "
+                 ++ Helper.Time.formatSeconds(t._end - t.start),
+               )}
             </ListGroup.Item>
           })
        |> React.array}

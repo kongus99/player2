@@ -21,6 +21,7 @@ type state = {
 type action =
   | Load(array(track))
   | Toggle(option(int))
+  | Duration(int)
   | UpdateTime(int)
   | Next
   | Prev
@@ -40,12 +41,12 @@ let lastTrack = ({selected}) => {
   selected->Belt_Array.get(selected->Belt_Array.size - 1) |> seek;
 };
 
-let nextTrack = (start, {selected}) => {
-  Array_Helper.next(~cyclic=true, t => t.start >= start, selected) |> seek;
+let nextTrack = ({start}, {selected}) => {
+  Helper.Array.next(~cyclic=true, t => t.start >= start, selected) |> seek;
 };
 
-let prevTrack = (start, {selected}) => {
-  Array_Helper.next(
+let prevTrack = ({start}, {selected}) => {
+  Helper.Array.next(
     ~cyclic=true,
     t => start >= t.start,
     selected |> Belt_Array.reverse,
@@ -65,18 +66,21 @@ let getTrack = playing =>
   | Active(t) => Some(t)
   };
 
-let reducer = (state, action) =>
+let reducer = (state, action) => {
+  let mapTrack = (f, track) =>
+    switch (track) {
+    | Seeking(t) => f(t, state)
+    | Active(t) => f(t, state)
+    | x => x
+    };
+  let generateSelected = tracks =>
+    Belt_MapInt.keep(tracks, (_, {selected}: track) => selected)
+    |> Belt_MapInt.valuesToArray;
   switch (action) {
   | Load(received) =>
     let tracks =
       Belt_MapInt.fromArray(Belt_Array.map(received, t => (t.start, t)));
-    {
-      tracks,
-      selected:
-        Belt_MapInt.keep(tracks, (_, {selected}) => selected)
-        |> Belt_MapInt.valuesToArray,
-      playing: Inactive,
-    };
+    {tracks, selected: generateSelected(tracks), playing: Inactive};
   | Toggle(start) =>
     let toggle = (t: track) => {...t, selected: !t.selected};
     let tracks =
@@ -85,14 +89,28 @@ let reducer = (state, action) =>
         Belt_MapInt.update(state.tracks, s, mt => Belt_Option.map(mt, toggle))
       | None => Belt_MapInt.map(state.tracks, toggle)
       };
-    let selected =
-      Belt_MapInt.keep(tracks, (_, {selected}) => selected)
-      |> Belt_MapInt.valuesToArray;
+    let selected = generateSelected(tracks);
     if (Belt_Array.size(selected) > 0) {
       {tracks, selected, playing: Inactive};
     } else {
       state;
     };
+  | Duration(time) =>
+    Belt_MapInt.maximum(state.tracks)
+    ->Belt_Option.mapWithDefault(
+        state,
+        ((_, max)) => {
+          let last = {...max, _end: time};
+          let tracks =
+            Belt_MapInt.update(state.tracks, last.start, _ => Some(last));
+          let playing =
+            mapTrack(
+              (t, _) => t.start == last.start ? Seeking(last) : Seeking(t),
+              state.playing,
+            );
+          {tracks, playing, selected: generateSelected(tracks)};
+        },
+      )
   | UpdateTime(time) => {
       ...state,
       playing:
@@ -108,33 +126,17 @@ let reducer = (state, action) =>
           if (isPlaying(time, t)) {
             state.playing;
           } else {
-            nextTrack(t.start, state);
+            nextTrack(t, state);
           }
         },
     }
 
-  | Next => {
-      ...state,
-      playing:
-        switch (state.playing) {
-        | Inactive => firstTrack(state)
-        | Seeking(t) => nextTrack(t.start, state)
-        | Active(t) => nextTrack(t.start, state)
-        },
-    }
-  | Prev => {
-      ...state,
-      playing:
-        switch (state.playing) {
-        | Inactive => firstTrack(state)
-        | Seeking(t) => prevTrack(t.start, state)
-        | Active(t) => prevTrack(t.start, state)
-        },
-    }
+  | Next => {...state, playing: mapTrack(nextTrack, state.playing)}
+  | Prev => {...state, playing: mapTrack(prevTrack, state.playing)}
   | First => {...state, playing: firstTrack(state)}
   | Last => {...state, playing: lastTrack(state)}
   };
-
+};
 module Fetcher = {
   module Decode = {
     let track = json =>

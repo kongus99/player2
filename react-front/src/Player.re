@@ -42,6 +42,8 @@ let callOnPlayer = f => {
 };
 
 let createPlayer = (videoId, dispatch) => {
+  open Store;
+  open AlbumStore;
   callOnPlayer(p => p##dispose());
   let container = document##getElementById("mainPlayer");
   let playerNode = document##createElement("video");
@@ -57,11 +59,15 @@ let createPlayer = (videoId, dispatch) => {
     );
   let () = player##responsive(true);
   let () =
-    player##on("timeupdate", () => {
-      dispatch(
-        Store.AlbumAction(AlbumStore.UpdateTime(player##currentTime())),
-      )
-    });
+    player##on("timeupdate", () =>
+      if (player##duration() > 0) {
+        let () = player##off("timeupdate");
+        dispatch(AlbumAction(Duration(player##duration())));
+        player##on("timeupdate", () => {
+          dispatch(AlbumAction(UpdateTime(player##currentTime())))
+        });
+      }
+    );
   ();
 };
 
