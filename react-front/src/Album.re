@@ -39,7 +39,7 @@ module Controls = {
 let make = () => {
   open Store;
   open AlbumStore;
-  let dsipatch = Wrapper.useDispatch();
+  let dispatch = Wrapper.useDispatch();
   let tracks = Wrapper.useSelector(Selector.AlbumStore.tracks);
   let playing = Wrapper.useSelector(Selector.AlbumStore.playing);
 
@@ -62,7 +62,7 @@ let make = () => {
               key={string_of_int(t.start)}
               action=true
               variant={variant(t)}
-              onClick={_ => dsipatch(AlbumAction(Toggle(Some(t.start))))}>
+              onClick={_ => dispatch(AlbumAction(Toggle(Some(t.start))))}>
               {ReasonReact.string(
                  t.title
                  ++ " : "

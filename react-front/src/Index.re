@@ -38,6 +38,14 @@ module Nav = {
       [|selectedVideo|],
     );
 
+    React.useEffect1(
+      () => {
+        Belt_MapInt.isEmpty(tracks) ? () : setTab(_ => albumTab.eventKey);
+        None;
+      },
+      [|Belt_MapInt.size(tracks)|],
+    );
+
     let onSelect = k => {
       if (k == browseTab.eventKey) {
         VideoStore.Fetcher.fetch(v =>
@@ -53,13 +61,12 @@ module Nav = {
           <Player.Options />
           <Video.List />
         </Tab>
-        <Tab
-          eventKey={albumTab.eventKey}
-          title={albumTab.title}
-          disabled={Belt_MapInt.isEmpty(tracks)}>
-          <Album.Controls />
-          <Album />
-        </Tab>
+        {Belt_MapInt.isEmpty(tracks)
+           ? <div />
+           : <Tab eventKey={albumTab.eventKey} title={albumTab.title}>
+               <Album.Controls />
+               <Album />
+             </Tab>}
       </Tabs>
     );
   };
