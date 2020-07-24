@@ -1,190 +1,161 @@
 module Video.Edit exposing (..)
 
+import Alert
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form as Form
-import Bootstrap.Form.Input as Input
 import Bootstrap.Modal as Modal
-import Extra exposing (isJust)
-import Html exposing (Html, div, text)
-import Process
+import Html exposing (Html, text)
+import Json.Decode
+import Login.Form as Form exposing (resolveError)
 import RemoteData exposing (WebData)
 import Task
-import Url
-import Validation exposing (Validation(..), feedback, status)
-import Video.Video as Video exposing (Video)
+import Video.Album as Album exposing (Album)
+import Video.Video as Video exposing (VerifiedVideo, Video(..), VideoData, decodeVerified, edit, persisted, unverified, verified)
 
 
 type alias Model =
-    { visible : Modal.Visibility, submitted : Bool, url : String, videoId : Maybe String, video : Maybe Video }
-
-
-init =
-    { visible = Modal.hidden, submitted = False, url = "", videoId = Nothing, video = Nothing }
-
-
-resetSubmitted model =
-    { model | submitted = False }
-
-
-setVideo : Model -> Video -> Model
-setVideo model video =
-    { model
-        | url =
-            Video.toUrl video.videoId
-                |> Maybe.map Url.toString
-                |> Maybe.withDefault ""
-        , videoId = Just video.videoId
+    { video : Video
+    , alert : Alert.Model Alert.Msg
+    , visible : Modal.Visibility
     }
 
 
+init =
+    { video = unverified, alert = Alert.init, visible = Modal.hidden }
+
+
 type Msg
-    = Close
-    | Open (Maybe Video)
-    | Submit
-    | Submitted (WebData (Maybe Int))
-    | Verified (WebData Video)
-    | ChangeUrl String
-    | VerifyUrl ()
+    = Submit
+    | VerifiedVideo (WebData ( Maybe Int, VerifiedVideo ))
+    | PersistedVideo (WebData Int)
+    | AlbumSaved Int (WebData Int)
+    | VideoFetched (WebData VideoData)
+    | AlbumFetched VideoData (WebData (Maybe Album))
+    | Edit String String
+    | Open (Maybe Int)
+    | Close
+    | AlertMsg Alert.Msg
+
+
+isClosing : Msg -> Bool
+isClosing msg =
+    case msg of
+        Close ->
+            True
+
+        _ ->
+            False
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        showFeedback m =
+            Task.perform AlertMsg (Task.succeed m)
+
+        resolveResponse errMsg successFunction response =
+            case response of
+                RemoteData.Failure err ->
+                    ( model, resolveError [ ( 400, errMsg ) ] err |> Alert.Danger |> showFeedback )
+
+                RemoteData.Success v ->
+                    successFunction v
+
+                _ ->
+                    ( model, Cmd.none )
+    in
     case msg of
-        Close ->
-            ( { model | visible = Modal.hidden }, Cmd.none )
-
-        Open video ->
-            let
-                openModal =
-                    { model | visible = Modal.shown }
-            in
-            ( video |> Maybe.map (setVideo openModal) |> Maybe.withDefault openModal, Task.succeed () |> Task.perform VerifyUrl )
-
         Submit ->
-            let
-                cmd =
-                    model.video
-                        |> Maybe.map
-                            (\v ->
-                                case v.id of
-                                    Nothing ->
-                                        Video.post Submitted v
-
-                                    _ ->
-                                        Video.put Submitted v
-                            )
-                        |> Maybe.withDefault Cmd.none
-            in
-            ( model, cmd )
-
-        ChangeUrl url ->
-            let
-                parsed =
-                    Video.parseId url
-            in
-            ( { model | url = url, videoId = parsed, video = Maybe.andThen (\_ -> model.video) parsed }
-            , Process.sleep 1000 |> Task.perform VerifyUrl
-            )
-
-        VerifyUrl _ ->
             ( model
-            , model.videoId
-                |> Maybe.map
-                    (\u -> Video.verify u Verified)
-                |> Maybe.withDefault Cmd.none
+            , case model.video of
+                Unverified v ->
+                    Form.get (\s -> "/api/verify?" ++ s) v (Form.expectJson VerifiedVideo decodeVerified)
+
+                Verified v ->
+                    Form.post Video.url v (Form.expectJson PersistedVideo Json.Decode.int)
+
+                Persisted id v ->
+                    Form.post (Album.url id) v (Form.expectJson (AlbumSaved id) Json.Decode.int)
             )
 
-        Submitted _ ->
-            ( { model | visible = Modal.hidden, submitted = True, video = Nothing }, Cmd.none )
+        VerifiedVideo response ->
+            resolveResponse "Could not verify url."
+                (\r -> ( { model | video = verified r }, Alert.Success "Video successfully verified." |> showFeedback ))
+                response
 
-        Verified webData ->
+        PersistedVideo response ->
+            resolveResponse "Could not save video."
+                (\videoId -> ( model, Cmd.batch [ Alert.Success "Video saved." |> showFeedback, Video.get videoId VideoFetched ] ))
+                response
+
+        AlbumSaved videoId response ->
+            resolveResponse "Could not save album for this video"
+                (\_ -> ( model, Cmd.batch [ Alert.Success "Album saved." |> showFeedback, Video.get videoId VideoFetched ] ))
+                response
+
+        VideoFetched response ->
+            resolveResponse "Error fetching video."
+                (\data -> ( { model | visible = Modal.shown, video = persisted data Nothing }, Album.get data.id (AlbumFetched data) ))
+                response
+
+        AlbumFetched video response ->
+            resolveResponse "Error fetching album."
+                (\album -> ( { model | visible = Modal.shown, video = persisted video album }, Cmd.none ))
+                response
+
+        Edit k v ->
+            ( { model | video = edit ( k, v ) model.video }, Cmd.none )
+
+        Open mid ->
+            case mid of
+                Just id ->
+                    ( model, Video.get id VideoFetched )
+
+                Nothing ->
+                    ( { init | visible = Modal.shown, video = unverified }, Cmd.none )
+
+        Close ->
+            ( init, Cmd.none )
+
+        AlertMsg m ->
+            ( { model | alert = Alert.update m model.alert }, Cmd.none )
+
+
+view : (Msg -> msg) -> Model -> Html msg
+view mapper model =
+    let
+        modal form submit =
             let
-                video =
-                    case webData of
-                        RemoteData.Success v ->
-                            Just v
-
-                        _ ->
-                            Nothing
+                fields =
+                    (Alert.view model.alert |> Html.map AlertMsg) :: (Form.view Edit form |> List.map (Form.group []))
             in
-            ( { model | video = video }, Cmd.none )
+            Modal.config Close
+                |> Modal.large
+                |> Modal.hideOnBackdropClick True
+                |> Modal.body []
+                    [ Form.form [] fields
+                    ]
+                |> Form.footer Submit submit form
+                |> Modal.view model.visible
+                |> Html.map mapper
+    in
+    case model.video of
+        Unverified form ->
+            modal form "Verify"
+
+        Verified form ->
+            modal form "Save"
+
+        Persisted _ form ->
+            modal form "Update"
 
 
 addButton : (Msg -> a) -> Html a
 addButton mapper =
-    Button.button [ Button.success, Button.onClick (mapper (Open Nothing)) ] [ text "+" ]
+    Button.button [ Button.success, Button.onClick <| mapper <| Open Nothing ] [ text "+" ]
 
 
-editButton : Video -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
-editButton video mapper =
-    ButtonGroup.button [ Button.info, Button.small, Button.onClick (mapper (Open (Just video))) ] [ text "Edit" ]
-
-
-validate model =
-    if String.trim model.url |> String.isEmpty then
-        ( Indeterminate, Indeterminate )
-
-    else if not <| isJust model.videoId then
-        ( Indeterminate, Invalid ("No video id found in " ++ model.url) )
-
-    else if not <| isJust model.video then
-        ( Invalid "", Invalid ("Incorrect video id " ++ Maybe.withDefault "" model.videoId) )
-
-    else
-        ( Valid, Valid )
-
-
-modal : (Msg -> msg) -> Model -> Html msg
-modal mapper model =
-    let
-        name =
-            model.video |> Maybe.map .title |> Maybe.withDefault ""
-
-        ( upper, lower ) =
-            validate model
-    in
-    div []
-        [ Modal.config Close
-            |> Modal.large
-            |> Modal.hideOnBackdropClick True
-            |> Modal.body []
-                [ Form.form []
-                    [ Form.form []
-                        [ Form.group []
-                            [ Form.label [] [ text "Title" ]
-                            , Input.text
-                                [ upper |> status
-                                , Input.readonly True
-                                , Input.placeholder "Name"
-                                , Input.value name
-                                ]
-                            ]
-                        , Form.group []
-                            [ Form.label [] [ text "Url" ]
-                            , Input.text
-                                [ lower |> status
-                                , Input.placeholder "Please enter correct youtube url"
-                                , Input.value model.url
-                                , Input.onInput ChangeUrl
-                                ]
-                            , lower |> feedback
-                            ]
-                        ]
-                    ]
-                ]
-            |> Modal.footer []
-                (if Extra.isJust model.video then
-                    [ Button.submitButton
-                        [ Button.primary
-                        , Button.onClick Submit
-                        ]
-                        [ text "Save" ]
-                    ]
-
-                 else
-                    []
-                )
-            |> Modal.view model.visible
-            |> Html.map mapper
-        ]
+editButton : Maybe Int -> (Msg -> msg) -> ButtonGroup.ButtonItem msg
+editButton mid mapper =
+    ButtonGroup.button [ Button.info, Button.small, Button.onClick <| mapper <| Open mid ] [ text "Edit" ]

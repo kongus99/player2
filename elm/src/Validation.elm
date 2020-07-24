@@ -2,6 +2,7 @@ module Validation exposing (..)
 
 import Bootstrap.Form as Form
 import Bootstrap.Form.Input as Input
+import Bootstrap.Form.Textarea as Textarea
 import Dict
 import Html exposing (div, text)
 
@@ -12,8 +13,8 @@ type Validation
     | Invalid String
 
 
-status : Validation -> Input.Option msg
-status validation =
+inputStatus : Validation -> Input.Option msg
+inputStatus validation =
     case validation of
         Indeterminate ->
             Input.attrs []
@@ -23,6 +24,19 @@ status validation =
 
         Invalid _ ->
             Input.danger
+
+
+textAreaStatus : Validation -> Textarea.Option msg
+textAreaStatus validation =
+    case validation of
+        Indeterminate ->
+            Textarea.attrs []
+
+        Valid ->
+            Textarea.success
+
+        Invalid _ ->
+            Textarea.danger
 
 
 feedback : Validation -> Html.Html a

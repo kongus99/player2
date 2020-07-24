@@ -4,12 +4,11 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
-import Login.Form as Form exposing (Field, Form, Type(..), emptyInput)
-import Regex
+import Login.Form as Form exposing (Field, Form, Type(..), editable, fieldValidator)
 import RemoteData exposing (WebData)
 import Set
 import Validation exposing (Validation(..))
-import Validator exposing (Validator, email, emptyString, password, username, validator)
+import Validator exposing (Validator, email, emptyString, password, username)
 
 
 
@@ -31,21 +30,21 @@ userCreation =
     Creation
         { fields =
             [ ( "username"
-              , emptyInput Input [ validator username "username" .value ] "Username"
+              , editable Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "email"
-              , emptyInput Input [ validator email "email" .value ] "Email"
+              , editable Nothing (Email "Email") [ fieldValidator email "email" ]
               )
             , ( "password"
-              , emptyInput Password [ validator password "password" .value ] "Password"
+              , editable Nothing (Password "Password") [ fieldValidator password "password" ]
               )
             , ( "passwordRepeated"
-              , emptyInput Password [ validatePasswordsMatch ] "Repeat password"
+              , editable Nothing (Password "Repeat password") [ validatePasswordsMatch ]
               )
             ]
                 |> Dict.fromList
         , order = [ "username", "email", "password", "passwordRepeated" ]
-        , url = "/api/user"
+        , excluded = Set.fromList [ "passwordRepeated" ]
         }
 
 
@@ -54,15 +53,15 @@ userVerification =
     LoggingIn
         { fields =
             [ ( "username"
-              , emptyInput Input [ validator username "username" .value ] "Username"
+              , editable Nothing (Text "Username") [ fieldValidator username "username" ]
               )
             , ( "password"
-              , emptyInput Password [ validator emptyString "password" .value ] "Password"
+              , editable Nothing (Password "Password") [ fieldValidator emptyString "password" ]
               )
             ]
                 |> Dict.fromList
         , order = [ "username", "password" ]
-        , url = "/api/authenticate"
+        , excluded = Set.empty
         }
 
 

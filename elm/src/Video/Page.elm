@@ -4,13 +4,13 @@ import Alert as Alert
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Navbar as Navbar
-import Html exposing (Html, div, text)
+import Html exposing (Html, text)
 import Html.Attributes exposing (class, href)
 import Json.Encode as Encode
 import Login.Login as Login exposing (Msg(..))
 import Login.User as User
 import TextFilter exposing (TextFilter)
-import Video.Edit as Edit exposing (resetSubmitted)
+import Video.Edit as Edit exposing (isClosing)
 import Video.List as List exposing (Msg(..))
 import Video.Options as Options exposing (Option(..), Options)
 import Video.Video as Video
@@ -69,7 +69,7 @@ init _ =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ List.subscriptions model.list |> Sub.map ListMsg
+        [ Sub.map ListMsg List.subscriptions
         , Navbar.subscriptions model.navbar NavbarMsg
         ]
 
@@ -108,7 +108,7 @@ update msg model =
             in
             ( { model
                 | filter = filter
-                , list = List.filterList filter model.list
+                , list = model.list --FIXME
               }
             , Cmd.none
             )
@@ -117,12 +117,15 @@ update msg model =
             let
                 ( newModel, cmd ) =
                     Edit.update m model.add
-            in
-            if newModel.submitted then
-                ( { model | add = newModel |> resetSubmitted }, Video.get (ListMsg << Fetched) )
 
-            else
-                ( { model | add = newModel }, Cmd.map Add cmd )
+                onClose =
+                    if isClosing m then
+                        Video.getAll (ListMsg << Fetched)
+
+                    else
+                        Cmd.none
+            in
+            ( { model | add = newModel }, Cmd.batch [ Cmd.map Add cmd, onClose ] )
 
         LoginMsg m ->
             let
@@ -158,7 +161,7 @@ navbarView model =
             [ TextFilter.navbar Filter model.filter
             , Navbar.customItem <| Login.view LoginMsg model.login
             , Navbar.customItem <| Login.loginButton LoginMsg model.login
-            , Navbar.customItem <| Edit.modal Add model.add
+            , Navbar.customItem <| Edit.view Add model.add
             , Navbar.customItem <| Login.restrictHtml (Edit.addButton Add) model.login
             ]
         |> Navbar.view model.navbar

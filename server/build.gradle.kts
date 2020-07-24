@@ -38,6 +38,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.+")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.hibernate.validator:hibernate-validator")
@@ -102,11 +103,8 @@ tasks.withType<KotlinCompile> {
     dependsOn("buildMapping")
 }
 tasks.getByName<BootJar>("bootJar") {
-    dependsOn(":elm:uglify")
-    from("../elm/index.html") {
+    dependsOn(":react-front:parcel")
+    from("../react-front/lib/packed") {
         into("static")
-    }
-    from("../elm/lib") {
-        into("static/lib")
     }
 }

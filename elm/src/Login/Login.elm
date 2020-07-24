@@ -6,8 +6,7 @@ import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form as Form
 import Bootstrap.Modal as Modal
 import Html exposing (Html, div, text)
-import Http
-import Login.Form as Form exposing (submit, submitButton)
+import Login.Form as Form exposing (resolveError)
 import Login.User exposing (User(..), edit, getData, invalidate, userCreation, userLoggedIn, userVerification)
 import RemoteData exposing (WebData)
 import Task
@@ -53,19 +52,6 @@ init =
     { user = userVerification, alert = Alert.init, visible = Modal.hidden }
 
 
-resolveError err403 err =
-    case err of
-        Http.BadStatus status ->
-            if status == 403 then
-                err403
-
-            else
-                "Server status " ++ String.fromInt status ++ "error."
-
-        _ ->
-            "Server error."
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
@@ -77,10 +63,10 @@ update msg model =
             ( model
             , case model.user of
                 Creation u ->
-                    submit u Created
+                    Form.post "/api/user" u (Form.expectString Created)
 
                 LoggingIn fields ->
-                    submit fields Authenticated
+                    Form.post "/api/authenticate" fields (Form.expectString Authenticated)
 
                 LoggedIn _ ->
                     Cmd.none
@@ -105,7 +91,7 @@ update msg model =
         Created response ->
             case response of
                 RemoteData.Failure err ->
-                    ( model, resolveError "Could not create user." err |> Alert.Danger |> showFeedback )
+                    ( model, resolveError [ ( 403, "Could not create user." ) ] err |> Alert.Danger |> showFeedback )
 
                 RemoteData.Success _ ->
                     ( { model | user = userVerification }, Alert.Success "User created." |> showFeedback )
@@ -117,7 +103,7 @@ update msg model =
             case response of
                 RemoteData.Failure err ->
                     ( model
-                    , resolveError "Incorrect login/password." err |> Alert.Danger |> showFeedback
+                    , resolveError [ ( 403, "Incorrect login/password." ) ] err |> Alert.Danger |> showFeedback
                     )
 
                 RemoteData.Success _ ->
@@ -183,7 +169,7 @@ view mapper model =
                 |> Modal.body []
                     [ Form.form [] fields
                     ]
-                |> Modal.footer [] [ submitButton Submit "Submit" form ]
+                |> Form.footer Submit "Submit" form
                 |> Modal.view model.visible
                 |> Html.map mapper
     in

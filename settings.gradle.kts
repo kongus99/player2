@@ -1,3 +1,3 @@
 rootProject.name = "ytplayit"
-include("elm")
+include("react-front")
 include("server")
