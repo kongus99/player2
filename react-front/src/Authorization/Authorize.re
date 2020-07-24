@@ -30,7 +30,7 @@ module Authorize = {
     Bootstrap.(
       <>
         <Button onClick={_ => {setModalVisible(_ => true)}}>
-          <Icon.Inline icon="mdi:login" />
+          <Icon icon="mdi:login" />
         </Button>
         <Modal
           size="lg"

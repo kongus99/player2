@@ -10,7 +10,7 @@ let make = (~onLogout: string => unit) => {
           onLogout,
         )
       }}>
-      <Icon.Inline icon="mdi:logout" />
+      <Icon icon="mdi:logout" />
     </Button>
   );
 };

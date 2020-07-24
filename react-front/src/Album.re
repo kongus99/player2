@@ -10,24 +10,24 @@ module Controls = {
         <ButtonGroup size="sm" className="btn-block">
           <Button
             variant="primary" onClick={_ => dispatch(AlbumAction(First))}>
-            {React.string("|<")}
+            <Icon icon="mdi:page-first" />
           </Button>
           <Button
             variant="primary" onClick={_ => dispatch(AlbumAction(Prev))}>
-            {React.string("<<")}
+            <Icon icon="mdi:chevron-double-left" />
           </Button>
           <Button
             variant="primary"
             onClick={_ => dispatch(AlbumAction(Toggle(None)))}>
-            {React.string("Toggle")}
+            <Icon icon="mdi:playlist-check" />
           </Button>
           <Button
             variant="primary" onClick={_ => dispatch(AlbumAction(Next))}>
-            {React.string(">>")}
+            <Icon icon="mdi:chevron-double-right" />
           </Button>
           <Button
             variant="primary" onClick={_ => dispatch(AlbumAction(Last))}>
-            {React.string(">|")}
+            <Icon icon="mdi:page-last" />
           </Button>
         </ButtonGroup>
       </>
