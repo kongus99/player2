@@ -10,7 +10,7 @@ let make = (~onLogout: string => unit) => {
           onLogout,
         )
       }}>
-      {React.string("Logout")}
+      <Icon.Inline icon="mdi:logout" />
     </Button>
   );
 };

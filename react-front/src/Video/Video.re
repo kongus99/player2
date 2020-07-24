@@ -260,7 +260,7 @@ module Modal = {
               setState(_ => Unverified);
               setModalVisible(_ => true);
             }}>
-            {React.string("+")}
+            <Icon.Inline icon="mdi:plus" />
           </Button>
           <Modal
             size="lg"
@@ -286,7 +286,7 @@ module Modal = {
       Bootstrap.(
         <>
           <Button onClick={_ => setModalVisible(_ => true)}>
-            {React.string("Edit")}
+            <Icon.Inline icon="mdi:playlist-edit" />
           </Button>
           <Modal
             size="lg"
@@ -319,7 +319,9 @@ module Delete = {
     };
 
     Bootstrap.(
-      <Button variant="danger" onClick> {React.string("X")} </Button>
+      <Button variant="danger" onClick>
+        <Icon.Inline icon="mdi:playlist-remove" />
+      </Button>
     );
   };
 };

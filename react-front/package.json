@@ -29,6 +29,7 @@
     "videojs-youtube": "^2.6.1"
   },
   "devDependencies": {
+    "@iconify/react-with-api": "^1.0.0-beta.2",
     "bs-platform": "^7.3.2",
     "bsb-js": "^1.1.7",
     "express": "^4.17.1",
