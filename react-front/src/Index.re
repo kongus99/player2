@@ -83,20 +83,22 @@ module App = {
         <ButtonGroup>
           <Authorize />
           {if (authorized) {
-             <Video.Modal.Add />;
+             <>
+               <Video.Modal.Add />
+               {Belt_Option.mapWithDefault(selected, <div />, v =>
+                  <>
+                    <Video.Modal.Edit
+                      id={v.id}
+                      title={v.title}
+                      videoId={v.videoId}
+                    />
+                    <Video.Delete id={v.id} />
+                  </>
+                )}
+             </>;
            } else {
              <div />;
            }}
-          {Belt_Option.mapWithDefault(selected, <div />, v =>
-             <>
-               <Video.Modal.Edit
-                 id={v.id}
-                 title={v.title}
-                 videoId={v.videoId}
-               />
-               <Video.Delete id={v.id} />
-             </>
-           )}
         </ButtonGroup>
         {Belt_Option.mapWithDefault(selected, <div />, v =>
            <Player videoId={v.videoId} />
