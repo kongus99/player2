@@ -846,11 +846,6 @@
   resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
   integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
 
-"@iconify/icons-mdi-light@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@iconify/icons-mdi-light/-/icons-mdi-light-1.0.5.tgz#5457c81a1df60240f6a05a7f367c72881774a316"
-  integrity sha512-WSeCymN0g9Wf1/6ZPTMNQHIWW78FI/ejFamBztFjkN7rSN9NlWdWqMLd4ktwC7bX27ngjlLqJSSSZd4LUnaQrQ==
-
 "@iconify/react-with-api@^1.0.0-beta.2":
   version "1.0.0-beta.2"
   resolved "https://registry.yarnpkg.com/@iconify/react-with-api/-/react-with-api-1.0.0-beta.2.tgz#116d0035373e85e0f0be1dce167963a509d67a5d"
@@ -3420,9 +3415,9 @@ lodash.uniq@^4.5.0:
   integrity sha1-0CJTc662Uq3BvILklFM5qEJ1R3M=
 
 lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.4:
-  version "4.17.19"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
-  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 log-symbols@^2.2.0:
   version "2.2.0"
