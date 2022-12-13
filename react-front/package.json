@@ -32,7 +32,7 @@
     "@iconify/react-with-api": "^1.0.0-beta.2",
     "bs-platform": "^7.3.2",
     "bsb-js": "^1.1.7",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "http-proxy-middleware": "^1.0.4",
     "parcel-bundler": "^1.12.4"
   }
